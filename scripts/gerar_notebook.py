@@ -167,6 +167,7 @@ extras = [p for p in ("runs/detect/baseline_n", "runs/detect/det_s800", "runs/de
 code("""
 #@title 4.2 Tabela final (val e teste)
 import pandas as pd
+pd.set_option("display.width", 200); pd.set_option("display.max_columns", 20)
 tab = pd.read_csv("figs/tabela_final.csv")
 R = json.load(open("figs/resultados.json"))
 print(f"ponto de operação: conf = {R['conf']:.2f} ({R['varredura']['regra']}) · IoU NMS = {R['iou_nms']}")
@@ -228,7 +229,7 @@ md("""
 """),
 ]
 
-nb = {"cells": [{**c, "source": c["source"].replace("REPO_URL", REPO)} for c in cells],
+nb = {"cells": [{**c, "id": f"c{i:02d}", "source": c["source"].replace("REPO_URL", REPO)} for i, c in enumerate(cells)],
       "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
                    "language_info": {"name": "python"}, "colab": {"provenance": [], "gpuType": "A100"}, "accelerator": "GPU"},
       "nbformat": 4, "nbformat_minor": 5}

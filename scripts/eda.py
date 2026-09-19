@@ -22,7 +22,7 @@ EXT = (".jpg", ".jpeg", ".png")
 
 def imagem_de(label: Path) -> Path | None:
     # nomes do Roboflow têm pontos ("x_jpg.rf.<hash>.txt"): concatenar, não usar with_suffix
-    base = str(label).replace("/labels/", "/images/")[: -len(label.suffix)]
+    base = str(label).replace("/labels_original/", "/images/").replace("/labels/", "/images/")[: -len(label.suffix)]
     for e in EXT:
         p = Path(base + e)
         if p.exists():
@@ -44,8 +44,10 @@ def main() -> None:
     saida.mkdir(parents=True, exist_ok=True)
 
     rows, amostras = [], []
+    # a EDA descreve o dataset como recebido: se as labels foram refinadas (SAM), usa o backup original
+    pasta = "labels_original" if (raiz / "train" / "labels_original").exists() else "labels"
     for split in ("train", "valid", "test"):
-        for lab in sorted((raiz / split / "labels").glob("*.txt")):
+        for lab in sorted((raiz / split / pasta).glob("*.txt")):
             img_p = imagem_de(lab)
             if img_p is None:
                 continue
@@ -70,6 +72,7 @@ def main() -> None:
     for s, r in resumo.iterrows():
         md.append(f"| {s} | {int(r.imagens)} | {int(r.instancias)} | {r.inst_por_img} | {int(r.sem_buraco)} | {r.lum_media} | {int(r.inst_pequenas)} |")
     md += ["", "Resoluções mais frequentes (w×h → imagens):", ""] + [f"- {w}×{h}: {n}" for (w, h), n in resol.items()]
+    md.append(f"\nLabels analisadas: `{pasta}/` (anotação original do dataset).")
     (saida / "eda_tabela.md").write_text("\n".join(md) + "\n")
     print("\n".join(md))
 
