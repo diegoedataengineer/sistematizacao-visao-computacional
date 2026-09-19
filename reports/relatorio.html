@@ -1,0 +1,556 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Detecção e segmentação de buracos em vias urbanas com YOLO11</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"><style>
+@page { size: A4; margin: 14mm 15mm 15mm; }
+* { box-sizing: border-box; }
+body { font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; font-size: 9.5pt; line-height: 1.38;
+       color: #16202B; background: #FFF; margin: 0; padding: 0; }
+h1 { font-size: 22pt; line-height: 1.2; margin: 0 0 4pt; letter-spacing: -.01em; }
+h2 { font-size: 12.5pt; margin: 11pt 0 5pt; padding-bottom: 4pt; border-bottom: .8pt solid #C9D2DB; page-break-after: avoid; }
+h3 { font-size: 11pt; margin: 10pt 0 4pt; page-break-after: avoid; }
+h4 { font-size: 10pt; margin: 12pt 0 4pt; font-family: "IBM Plex Mono", monospace; color: #47576B; page-break-after: avoid; }
+p, li { orphans: 3; widows: 3; }
+p { margin: 0 0 5pt; }
+ul, ol { margin: 0 0 8pt; padding-left: 18pt; }
+li { margin-bottom: 2.5pt; }
+strong { font-weight: 600; }
+hr { border: none; border-top: .8pt solid #C9D2DB; margin: 9pt 0; }
+blockquote { margin: 9pt 0; padding: 7pt 12pt; border-left: 2.5pt solid #4A6E8A; background: #F2F5F8; font-size: 9.8pt; }
+blockquote p:last-child { margin-bottom: 0; }
+table { border-collapse: collapse; width: 100%; margin: 6pt 0 9pt; font-size: 8.8pt; page-break-inside: auto; }
+th, td { border: .6pt solid #C9D2DB; padding: 4pt 7pt; text-align: left; vertical-align: top; }
+th { background: #EEF2F6; font-weight: 600; }
+td:nth-child(n+2) { font-variant-numeric: tabular-nums; }
+code { font-family: "IBM Plex Mono", "DejaVu Sans Mono", monospace; font-size: .87em; background: #F0F3F6; padding: .5pt 3pt; border-radius: 2pt; }
+pre { background: #F7F9FB; border: .6pt solid #D8E0E8; border-radius: 3pt; padding: 5pt 8pt; overflow-x: auto;
+      font-size: 7.4pt; line-height: 1.35; margin: 5pt 0 8pt; page-break-inside: auto; }
+pre code { background: none; padding: 0; font-size: inherit; }
+img { max-width: 70%; height: auto; display: block; margin: 5pt auto; page-break-inside: avoid; }
+p img[alt="CEUB"] { max-width: 30%; }
+p img[alt^="Matriz de confusão"] { max-width: 40%; }
+p img[alt^="Precisão × revocação"], p img[alt^="Razão entre"] { max-width: 48%; }
+p img[alt^="Controle de qualidade"], p img[alt^="Caixas do detector"], p img[alt^="Falsos"] { max-width: 84%; }
+h1 + h3 + table { margin-bottom: 12pt; }
+h2#apêndice--código-fonte { page-break-before: always; }
+</style></head><body><p><img alt="CEUB" src="figures/ceub-logo.png" /></p>
+<h1 id="deteccao-e-segmentacao-de-buracos-em-vias-urbanas-com-yolo11">Detecção e segmentação de buracos em vias urbanas com YOLO11</h1>
+<h3 id="sistematizacao-visao-computacional-e-reconhecimento-de-padroes">Sistematização — Visão Computacional e Reconhecimento de Padrões</h3>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Disciplina</strong></td>
+<td>Visão Computacional e Reconhecimento de Padrões — Prof. Dr. Romes Heriberto Pires de Araújo</td>
+</tr>
+<tr>
+<td><strong>Integrantes</strong></td>
+<td>Diego Nunes de Morais <!-- adicionar os demais --></td>
+</tr>
+<tr>
+<td><strong>Data</strong></td>
+<td>20 de setembro de 2026</td>
+</tr>
+<tr>
+<td><strong>Cenário</strong></td>
+<td>Cidades Inteligentes — buracos em vias</td>
+</tr>
+<tr>
+<td><strong>Repositório</strong></td>
+<td><a href="https://github.com/diegoedataengineer/sistematizacao-visao-computacional">https://github.com/diegoedataengineer/sistematizacao-visao-computacional</a></td>
+</tr>
+<tr>
+<td><strong>Pesos treinados</strong></td>
+<td>Release <code>v1.0</code> — <code>det_s_best.pt</code>, <code>seg_s_best.pt</code>, <code>baseline_n_best.pt</code></td>
+</tr>
+<tr>
+<td><strong>Vídeo com inferência</strong></td>
+<td><!-- link (domingo) --></td>
+</tr>
+<tr>
+<td><strong>Vídeo-pitch</strong></td>
+<td><!-- link (domingo) --></td>
+</tr>
+</tbody>
+</table>
+<hr />
+<h2 id="1-introducao">1. Introdução</h2>
+<p>Este documento descreve a construção, ponta a ponta, de um sistema que <strong>detecta</strong> e <strong>segmenta</strong> buracos em vias urbanas a partir de imagens capturadas por veículos em circulação, e demonstra o sistema em vídeo. O escopo cobre a escolha e a inspeção do dataset, a correção e o refino das anotações, o treino de um detector e de um segmentador de instâncias, a avaliação com protocolo de teste único, a análise de erros e a aplicação em vídeo com rastreamento.</p>
+<p>Duas escolhas orientaram o trabalho e explicam boa parte dos resultados adiante.</p>
+<p>A primeira é <strong>não confiar nas anotações do dataset sem inspecioná-las</strong>. O dataset público escolhido misturava, nos mesmos arquivos, instâncias anotadas por caixa e por polígono; a biblioteca de treino descartava esses arquivos em silêncio, e o primeiro treino usou 59 das 1 076 imagens sem avisar. Detectar isso, corrigir o formato e refinar as máscaras com um modelo de fundação (SAM) consumiu a primeira noite e mudou o que o número de segmentação significa (seção 3).</p>
+<p>A segunda é <strong>medir o desempenho realizável, não o aparente</strong>. O conjunto de teste foi avaliado uma única vez, com limiar e modelo escolhidos em validação; o mAP é calculado no protocolo padrão, mas a precisão e a revocação que reportamos são as do ponto de operação que um sistema real usaria, e os erros foram inspecionados um a um. O resultado inclui um achado desconfortável: boa parte dos "falsos positivos" mais confiantes são buracos reais que o dataset não anotou.</p>
+<p>Todas as decisões de projeto estão registradas em ADRs (<code>docs/adr/</code>), com contexto, alternativas descartadas e consequências. <strong>Todo número deste relatório vem de execução real</strong>, gravado em <code>figs/resultados.json</code>, <code>figs/tabela_final.csv</code> e <code>runs/</code>, incluindo os desfavoráveis.</p>
+<hr />
+<h2 id="2-descricao-do-problema">2. Descrição do problema</h2>
+<p>Prefeituras recebem reclamações de buracos de forma dispersa e sem medida do dano. O que uma equipe de manutenção precisa é de uma lista priorizável: <strong>onde</strong> há buracos, <strong>quantos</strong> são por trecho e <strong>qual a extensão</strong> de cada um. Três características definem o problema:</p>
+<p><strong>Detecção e segmentação são tarefas complementares, não redundantes.</strong> A caixa localiza e conta; a máscara mede. Um buraco alongado ou diagonal ocupa uma fração pequena da sua caixa — a seção 6.3 quantifica isso — e priorizar por área da caixa superestimaria o dano.</p>
+<p><strong>O custo dos erros é assimétrico.</strong> Um buraco não detectado (falso negativo) some da lista de manutenção; um alarme falso (falso positivo) custa a revisão de um operador. O ponto de operação do detector foi escolhido com essa assimetria em mente (seção 8).</p>
+<p><strong>O sistema opera em vídeo, de um veículo em movimento.</strong> Isso impõe um detector de um estágio, em tempo real, e um rastreador para não contar o mesmo buraco duas vezes (seção 9).</p>
+<p>Trabalhamos com classe única (<code>pothole</code>). Rachaduras, remendos e tampas de bueiro não são alvo e aparecem na análise de erros como confusores.</p>
+<hr />
+<h2 id="3-dataset-utilizado">3. Dataset utilizado</h2>
+<p><strong>Potholes and Roads Instance Segmentation</strong>, workspace <code>pothole-vsmtu</code>, Roboflow Universe, versão 5, licença CC BY 4.0, obtido em 18/09/2026 em <a href="https://universe.roboflow.com/pothole-vsmtu/potholes-and-roads-instance-segmentation/dataset/5">universe.roboflow.com/pothole-vsmtu/potholes-and-roads-instance-segmentation/dataset/5</a>. O dataset original tem duas classes (<code>pothole</code>, <code>road</code>); mantivemos apenas <code>pothole</code>. Os três splits são os do próprio dataset, sem redistribuição.</p>
+<table>
+<thead>
+<tr>
+<th>Característica</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Imagens</td>
+<td>1 355 — treino 1 076 · validação 138 · teste 141</td>
+</tr>
+<tr>
+<td>Instâncias <code>pothole</code></td>
+<td>6 264 — treino 5 097 · validação 627 · teste 540</td>
+</tr>
+<tr>
+<td>Instâncias por imagem</td>
+<td>4,7 (treino) · 4,5 (validação) · 3,8 (teste)</td>
+</tr>
+<tr>
+<td>Imagens sem buraco</td>
+<td>29 · 6 · 11</td>
+</tr>
+<tr>
+<td>Resoluções dominantes</td>
+<td>1227×920 (714 imagens) · 720×720 (280) · ~400×300 (poucas)</td>
+</tr>
+<tr>
+<td>Instâncias pequenas (&lt; 32² px)</td>
+<td>40% · 41% · 37%</td>
+</tr>
+<tr>
+<td>Anotação</td>
+<td>polígonos (45%) e caixas (55%) — ver 3.1</td>
+</tr>
+</tbody>
+</table>
+<h3 id="31-uma-armadilha-nas-anotacoes">3.1 Uma armadilha nas anotações</h3>
+<p>Na inspeção das labels, 2 834 instâncias (45%) estavam em polígono e 3 430 (55%) apenas em caixa (cinco números por linha), misturadas nos mesmos arquivos — 1 270 arquivos com os dois formatos. O Ultralytics <strong>rejeita arquivos que misturam caixa e polígono</strong> ("labels mix") e os descarta como corrompidos, sem erro visível. O primeiro treino terminou em três minutos: havia usado 59 imagens de treino e 9 de validação. Detectamos o problema pelo tamanho anômalo do conjunto de validação no log, e não pela biblioteca.</p>
+<p>A correção converte cada caixa em um polígono retangular de quatro pontos (<code>scripts/filtrar_classes.py</code>) e apaga os caches de labels. Para a detecção isso é neutro — as caixas são derivadas dos polígonos. Para a segmentação, significava que mais da metade das máscaras de referência seriam retângulos, e a métrica de máscara mediria, em parte, "quão bem o modelo desenha retângulos".</p>
+<h3 id="32-analise-exploratoria">3.2 Análise exploratória</h3>
+<p><img alt="Distribuições do dataset" src="figures/00a_eda_distribuicoes.png" /></p>
+<p>Três observações da exploração condicionam o que vem depois. A distribuição de instâncias por imagem tem moda em duas e cauda longa (há imagens com mais de vinte buracos anotados): cenas de dashcam em rodovia alternam com fotos a pé de trechos muito degradados. A luminância média concentra-se entre 100 e 160 — cenas diurnas, sem noite; o modelo não foi exposto a condições noturnas. E <strong>cerca de 40% das instâncias têm menos de 32² pixels</strong>: buracos distantes, de poucos pixels, que antecipam a dificuldade de revocação discutida na seção 7.</p>
+<p><img alt="Amostras de treino com polígonos anotados" src="figures/00b_amostras_anotadas.png" /></p>
+<p>As amostras mostram a heterogeneidade do domínio: rodovias com neve (dashcam com sobreposição de velocidade e coordenadas), ruas urbanas com carros e caminhões, fotos de perto de asfalto molhado. Também mostram os confusores que reaparecem nos erros — uma tampa de bueiro ao lado de um buraco, remendos escuros, poças.</p>
+<h3 id="33-refino-das-mascaras-com-sam">3.3 Refino das máscaras com SAM</h3>
+<p>Para recuperar contornos reais nas 3 430 instâncias anotadas só por caixa, geramos a máscara de cada uma com o <em>Segment Anything Model</em> (ViT-B), usando a caixa humana como prompt, recortando a máscara pela caixa e mantendo o maior componente conexo (<code>scripts/refinar_mascaras_sam.py</code>). A pergunta que precisava de resposta antes de substituir as anotações era: <strong>a máscara do SAM é melhor que o retângulo?</strong></p>
+<p>Medimos isso em 300 instâncias que <strong>tinham</strong> polígono humano, derivando a caixa do polígono, pedindo a máscara ao SAM e comparando as duas coisas com o polígono original. A mesma amostra serviu para medir o retângulo.</p>
+<table>
+<thead>
+<tr>
+<th>Referência comparada ao polígono humano</th>
+<th>IoU mediano</th>
+<th>IoU médio</th>
+<th>P10</th>
+<th>P90</th>
+<th>≥ 0,7</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Retângulo (a anotação original das instâncias só-caixa)</td>
+<td>0,684</td>
+<td>0,669</td>
+<td>0,522</td>
+<td>0,790</td>
+<td>43%</td>
+</tr>
+<tr>
+<td>Máscara do SAM a partir da caixa</td>
+<td><strong>0,703</strong></td>
+<td><strong>0,685</strong></td>
+<td>0,497</td>
+<td><strong>0,851</strong></td>
+<td><strong>51%</strong></td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Controle de qualidade: polígono humano × máscara do SAM" src="figures/01_qc_sam_vs_humano.png" /></p>
+<p>O ganho na mediana é modesto, e o motivo está na figura: os polígonos humanos desta base são pouco precisos — um simples retângulo já concorda 0,68 com eles. Nos casos de IoU baixo (0,32 e 0,49 na figura), é o polígono humano que engloba asfalto ao redor do buraco; o contorno do SAM segue a borda real. O SAM supera o retângulo em todas as estatísticas, com ganho maior na cauda alta (P90 0,85 contra 0,79), e foi adotado como referência para treino e teste de segmentação. As anotações originais foram preservadas (<code>labels_original/</code>) para que a avaliação reporte as métricas contra as duas versões (seção 6.3). Das 3 430 caixas, 3 429 foram refinadas; uma permaneceu retângulo por o SAM não devolver máscara válida.</p>
+<hr />
+<h2 id="4-metodologia-adotada">4. Metodologia adotada</h2>
+<h3 id="41-papeis-dos-conjuntos">4.1 Papéis dos conjuntos</h3>
+<p>Três conjuntos com papéis estritos. <code>train</code> ajusta os pesos. <code>val</code> escolhe o modelo (<code>best.pt</code> pelo <em>fitness</em> do Ultralytics), o limiar de confiança e o IoU do NMS. <code>test</code> foi avaliado <strong>uma única vez</strong> ao final, com todos os parâmetros congelados, e o resultado entrou neste relatório sem retoque. A seção 11 registra, por honestidade, duas execuções sobre o teste que foram descartadas por erro de configuração antes da avaliação final.</p>
+<h3 id="42-escolha-dos-modelos">4.2 Escolha dos modelos</h3>
+<p><strong>Detecção: YOLO11s</strong> (Ultralytics 8.4.155), fine-tuning a partir dos pesos pré-treinados no COCO. Um detector de um estágio porque o cenário é vídeo de veículo em movimento, com requisito de tempo real e implantação futura embarcada; Faster R-CNN seria a escolha para imagens estáticas de alta resolução onde a latência não importa. Baseline: YOLO11n por 30 épocas.</p>
+<p><strong>Segmentação: YOLO11s-seg</strong>, sobre as mesmas imagens e o mesmo <code>data.yaml</code>, com protocolo idêntico ao do detector. Segmentação de <strong>instâncias</strong>, porque buracos se contam e se medem um a um; U-Net e DeepLab (semântica) perderiam a noção de instância, e Mask R-CNN exigiria outro pipeline de treino sem ganho justificável no prazo.</p>
+<p><strong>Nenhum treino do zero.</strong> Com 1 076 imagens, transferir de pesos pré-treinados é o caminho padrão; a comparação com um modelo maior (YOLO11m) na seção 6.4 confirma que capacidade adicional não se converte em desempenho nesta escala de dados.</p>
+<h3 id="43-ponto-de-operacao">4.3 Ponto de operação</h3>
+<p>Detectores produzem scores; o limiar transforma score em decisão e é uma escolha de custo, não um detalhe técnico. Varremos o limiar de confiança de 0,05 a 0,90 em validação, com precisão e revocação calculadas por <strong>casamento um-para-um</strong> (guloso por score, IoU ≥ 0,5) a partir de uma única inferência em <code>conf = 0,001</code>:</p>
+<table>
+<thead>
+<tr>
+<th>conf</th>
+<th>0,10</th>
+<th>0,15</th>
+<th>0,20</th>
+<th><strong>0,25</strong></th>
+<th>0,30</th>
+<th>0,35</th>
+<th>0,40</th>
+<th>0,50</th>
+<th>0,60</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Precisão</td>
+<td>0,458</td>
+<td>0,525</td>
+<td>0,570</td>
+<td><strong>0,619</strong></td>
+<td>0,668</td>
+<td>0,713</td>
+<td>0,767</td>
+<td>0,838</td>
+<td>0,907</td>
+</tr>
+<tr>
+<td>Revocação</td>
+<td>0,616</td>
+<td>0,561</td>
+<td>0,518</td>
+<td><strong>0,493</strong></td>
+<td>0,453</td>
+<td>0,411</td>
+<td>0,383</td>
+<td>0,314</td>
+<td>0,234</td>
+</tr>
+<tr>
+<td>F1</td>
+<td>0,525</td>
+<td>0,543</td>
+<td>0,543</td>
+<td><strong>0,549</strong></td>
+<td>0,540</td>
+<td>0,522</td>
+<td>0,511</td>
+<td>0,457</td>
+<td>0,373</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Precisão × revocação por limiar de confiança (validação)" src="figures/05_precisao_revocacao_limiar.png" /></p>
+<p>A regra inicial do projeto (ADR-S05) era "maior revocação com precisão ≥ 0,70", pensada antes de ver a curva; aplicada a este modelo, ela escolheria <code>conf = 0,35</code> e perderia 59% dos buracos. Apresentamos ao grupo três opções com os números reais — piso de precisão 0,70, máximo F1, piso 0,55 — e adotamos o <strong>máximo F1: <code>conf = 0,25</code></strong>, precisão 0,62 e revocação 0,49 em validação. É a regra mais defensável e, para manutenção viária, o custo de um buraco não detectado pesa mais que o de um alarme revisado por um operador. <code>IoU NMS = 0,7</code>. O mesmo limiar vale para teste, vídeo e demonstração.</p>
+<h3 id="44-metricas">4.4 Métricas</h3>
+<p><strong>mAP@0,5 e mAP@0,5:0,95</strong> (caixas e máscaras), pelo Ultralytics no limiar padrão 0,001 — o protocolo COCO; <strong>precisão e revocação no ponto de operação</strong>, por casamento um-para-um com IoU ≥ 0,5 — o que um sistema real entrega com <code>conf = 0,25</code>; <strong>matriz de confusão</strong>; <strong>IoU e Dice por imagem</strong> das máscaras, contra as referências refinadas e contra as originais; <strong>análise qualitativa</strong> de falsos positivos e negativos e revocação por tamanho. Acurácia não aparece: com classe única e fundo dominante, seria alta e inútil.</p>
+<hr />
+<h2 id="5-pipeline-de-treino">5. Pipeline de treino</h2>
+<table>
+<thead>
+<tr>
+<th>Parâmetro</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Modelos base</td>
+<td><code>yolo11s.pt</code> / <code>yolo11s-seg.pt</code> (COCO) · baseline <code>yolo11n.pt</code></td>
+</tr>
+<tr>
+<td>Épocas / parada antecipada</td>
+<td>50 / <em>patience</em> 10 — nenhum treino parou antes das 50</td>
+</tr>
+<tr>
+<td>Tamanho de imagem</td>
+<td>640 (extras: 800)</td>
+</tr>
+<tr>
+<td>Batch</td>
+<td>16</td>
+</tr>
+<tr>
+<td>Otimizador</td>
+<td>escolhido automaticamente pelo Ultralytics (<code>auto</code>), lr0 0,01, momentum 0,937, weight decay 0,0005</td>
+</tr>
+<tr>
+<td>Augmentation</td>
+<td>padrão Ultralytics: mosaic 1,0 · fliplr 0,5 · hsv_h/s/v 0,015/0,7/0,4 · scale 0,5 · translate 0,1</td>
+</tr>
+<tr>
+<td>Seed / determinístico</td>
+<td>0 / sim</td>
+</tr>
+<tr>
+<td>Camadas congeladas</td>
+<td>nenhuma</td>
+</tr>
+<tr>
+<td>Hardware</td>
+<td>GTX 1060 6 GB (local)</td>
+</tr>
+</tbody>
+</table>
+<table>
+<thead>
+<tr>
+<th>Treino</th>
+<th>Épocas</th>
+<th>Tempo</th>
+<th>s/época</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>YOLO11n (baseline)</td>
+<td>30</td>
+<td>31 min</td>
+<td>62</td>
+</tr>
+<tr>
+<td>YOLO11s — detecção</td>
+<td>50</td>
+<td>55 min</td>
+<td>67</td>
+</tr>
+<tr>
+<td>YOLO11s-seg — segmentação</td>
+<td>50</td>
+<td>75 min</td>
+<td>90</td>
+</tr>
+<tr>
+<td>YOLO11s @ 800 px (extra)</td>
+<td>50</td>
+<td>100 min</td>
+<td>120</td>
+</tr>
+<tr>
+<td>YOLO11m (extra)</td>
+<td>50</td>
+<td>120 min</td>
+<td>144</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Curvas de treino — detecção (YOLO11s); as da segmentação estão em figs/curvas_seg_s.png" src="figures/03_curvas_treino_det.png" /></p>
+<p>No detector, a perda de caixa caiu de 1,68 para 1,10 no treino e de 1,84 para 1,19 na validação; o melhor mAP@0,5:0,95 em validação (0,294) ocorreu na época 44 de 50 e a perda de validação ainda caía ao final. As duas perdas caem juntas: não há sinal de sobreajuste forte, e mais épocas provavelmente renderiam um pouco mais.</p>
+<p>O pipeline inteiro — download, filtro das labels, EDA, controle de qualidade e refino com SAM, cinco treinos, avaliação — rodou sem intervenção manual durante a noite (<code>scripts/pipeline.sh</code>), com retomada automática a partir do último checkpoint em caso de interrupção.</p>
+<hr />
+<h2 id="6-resultados-experimentais">6. Resultados experimentais</h2>
+<h3 id="61-desempenho-em-validacao-e-no-teste">6.1 Desempenho em validação e no teste</h3>
+<p><code>conf = 0,25</code> · <code>IoU NMS = 0,7</code> · <code>imgsz = 640</code> (exceto onde indicado). O teste foi avaliado uma única vez.</p>
+<table>
+<thead>
+<tr>
+<th>Modelo</th>
+<th>Split</th>
+<th>mAP@0,5</th>
+<th>mAP@0,5:0,95</th>
+<th>Precisão</th>
+<th>Revocação</th>
+<th>Mask mAP@0,5</th>
+<th>Mask mAP@0,5:0,95</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>YOLO11s — principal</strong></td>
+<td>val</td>
+<td>0,498</td>
+<td>0,298</td>
+<td>0,619</td>
+<td>0,493</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>YOLO11s — principal</strong></td>
+<td><strong>teste</strong></td>
+<td><strong>0,487</strong></td>
+<td><strong>0,287</strong></td>
+<td><strong>0,645</strong></td>
+<td><strong>0,518</strong></td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>YOLO11n (baseline, 30 ép.)</td>
+<td>val</td>
+<td>0,437</td>
+<td>0,234</td>
+<td>0,640</td>
+<td>0,431</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>YOLO11n (baseline, 30 ép.)</td>
+<td>teste</td>
+<td>0,421</td>
+<td>0,201</td>
+<td>0,612</td>
+<td>0,450</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>YOLO11s @ 800 px (extra)</td>
+<td>val</td>
+<td>0,508</td>
+<td>0,302</td>
+<td>0,647</td>
+<td>0,501</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>YOLO11s @ 800 px (extra)</td>
+<td>teste</td>
+<td>0,517</td>
+<td>0,306</td>
+<td>0,655</td>
+<td>0,485</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>YOLO11m (extra)</td>
+<td>val</td>
+<td>0,491</td>
+<td>0,288</td>
+<td>0,639</td>
+<td>0,455</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td>YOLO11m (extra)</td>
+<td>teste</td>
+<td>0,502</td>
+<td>0,284</td>
+<td>0,674</td>
+<td>0,487</td>
+<td>—</td>
+<td>—</td>
+</tr>
+<tr>
+<td><strong>YOLO11s-seg — principal</strong></td>
+<td>val</td>
+<td>0,508</td>
+<td>0,297</td>
+<td>0,649</td>
+<td>0,514</td>
+<td>0,306</td>
+<td>0,132</td>
+</tr>
+<tr>
+<td><strong>YOLO11s-seg — principal</strong></td>
+<td><strong>teste</strong></td>
+<td>0,493</td>
+<td>0,292</td>
+<td>0,663</td>
+<td>0,496</td>
+<td><strong>0,319</strong></td>
+<td><strong>0,156</strong></td>
+</tr>
+</tbody>
+</table>
+<p>No teste, o detector principal obteve <strong>mAP@0,5 = 0,487</strong> e <strong>mAP@0,5:0,95 = 0,287</strong>, com <strong>precisão 0,645 e revocação 0,518</strong> no ponto de operação — 280 acertos, 154 falsos positivos e 260 falsos negativos em 540 buracos anotados. A diferença val→teste em mAP@0,5 foi de −0,012, dentro do esperado para uma única execução e sem sinal de sobreajuste ao conjunto de validação. O YOLO11s supera o baseline YOLO11n em 0,066 de mAP@0,5 no teste, com o dobro de épocas e 3,6× os parâmetros.</p>
+<h3 id="62-matriz-de-confusao">6.2 Matriz de confusão</h3>
+<p><img alt="Matriz de confusão no teste" src="figures/06_matriz_confusao_teste.png" /></p>
+<p>Com classe única, a matriz reduz-se a buraco × fundo. A figura é gerada pelo Ultralytics com o critério de casamento dele (IoU 0,45), por isso seus números — 262 acertos, 187 previsões sem buraco anotado, 278 buracos sem previsão — diferem ligeiramente da contagem um-para-um a IoU 0,5 usada na tabela (280 / 154 / 260). A leitura é a mesma: no ponto de operação, o modelo perde cerca de metade dos buracos anotados e um terço das suas previsões não casa com anotação — e a seção 7 mostra que boa parte dessas previsões "erradas" estão certas.</p>
+<h3 id="63-o-que-a-mascara-acrescenta-a-caixa">6.3 O que a máscara acrescenta à caixa</h3>
+<p><img alt="Caixas do detector × máscaras do segmentador nas mesmas imagens de validação" src="figures/09_caixas_vs_mascaras.png" /></p>
+<p>Nas mesmas imagens, as máscaras seguem o contorno real: buracos cheios de água ficam delimitados pela lâmina d'água, áreas grandes de dano são divididas em componentes, e em buracos distantes de dashcam a máscara praticamente coincide com a caixa — poucos pixels não têm forma.</p>
+<p><img alt="Razão entre a área da máscara e a área da caixa (validação)" src="figures/10_razao_area_mascara_caixa.png" /></p>
+<p>Quantificando: nas 496 instâncias previstas em validação, a razão área da máscara / área da caixa tem <strong>mediana 0,56</strong> (P10 0,22, P90 0,77). <strong>A caixa superestima a área do buraco em cerca de 44%</strong> no caso típico, e em mais de 4× nos 10% mais alongados. Para priorizar manutenção por extensão do dano, a máscara é a medida certa.</p>
+<p>No teste, o IoU e o Dice médios por imagem das máscaras previstas foram <strong>0,510 e 0,624</strong> contra as referências refinadas por SAM (IoU mediano 0,565, 138 imagens com buraco ou previsão), e 0,355 e 0,490 contra as anotações originais em retângulo. A diferença entre as duas linhas mede o quanto as referências mudaram com o refino — e confirma que o modelo aprendeu contornos, não retângulos.</p>
+<h3 id="64-experimentos-extras">6.4 Experimentos extras</h3>
+<p>Dois experimentos com o mesmo protocolo, uma execução cada. Com <strong>resolução de entrada 800 px</strong>, o YOLO11s obteve 0,517 / 0,306 no teste (val 0,508 / 0,302), cerca de 0,03 acima do modelo principal em 640 px — consistente com a EDA (40% das instâncias são pequenas) e com os falsos negativos de buracos distantes: mais pixels por buraco ajudam, ao custo de 1,8× o tempo por época. O <strong>YOLO11m</strong> em 640 px ficou em 0,502 / 0,284 (val 0,491 / 0,288), com precisão maior (0,674) e revocação menor (0,487) que o YOLO11s: um modelo 2,7× maior não trouxe ganho com 1 076 imagens de treino e custou 2,1× o tempo por época.</p>
+<p>Mantivemos o YOLO11s @ 640 como modelo principal porque a escolha foi feita em validação antes destes experimentos existirem — trocar de modelo depois de ver o teste violaria o protocolo. A resolução 800 fica registrada como o próximo passo de maior retorno.</p>
+<h3 id="65-reprodutibilidade">6.5 Reprodutibilidade</h3>
+<p>Todos os treinos usam <code>seed = 0</code> e <code>deterministic = True</code>; os pesos finais estão na Release <code>v1.0</code>, os hiperparâmetros efetivos em <code>runs/*/args.yaml</code> e as curvas em <code>results.csv</code>. O notebook <code>notebooks/sistematizacao.ipynb</code> reproduz o pipeline inteiro no Colab (com <code>TREINAR = False</code> baixa os pesos e só avalia; com <code>TREINAR = True</code> retreina em ~1 h num A100). Não fizemos validação cruzada — uma execução por configuração, por custo de GPU — e diferenças de poucos milésimos entre modelos não são estatisticamente distinguíveis.</p>
+<hr />
+<h2 id="7-analise-dos-erros">7. Análise dos erros</h2>
+<h3 id="71-falsos-positivos">7.1 Falsos positivos</h3>
+<p><img alt="Falsos positivos no teste, ordenados por confiança" src="figures/07_falsos_positivos.png" /></p>
+<p>Os oito falsos positivos mais confiantes (0,72–0,84) têm um padrão claro. Em seis deles — <code>img-42</code>, <code>img-82</code>, <code>img-195</code>, <code>img-282</code> e duas caixas em <code>pothole-166</code> — a caixa prevista está sobre um buraco <strong>real que não foi anotado</strong>: a anotação humana do dataset é incompleta, e o modelo está certo contra o gabarito. Em <code>img-631</code> a caixa cobre uma área grande de asfalto rachado com água — dano real, de fronteira ambígua entre rachadura e buraco. Em <code>pothole-166</code> aparecem duas caixas parcialmente sobrepostas sobre a mesma mancha: o NMS com IoU 0,7 não as funde, e a segunda vira falso positivo; um IoU de NMS de 0,5 reduziria esse caso. Só <code>Image_27</code> — uma mancha escura pequena no asfalto — é um falso positivo sem dano visível.</p>
+<p>A consequência é direta: <strong>uma parte relevante dos 154 falsos positivos do teste é ruído de rótulo, não erro do modelo</strong>, e a precisão de 0,645 é um limite inferior da precisão real.</p>
+<h3 id="72-falsos-negativos">7.2 Falsos negativos</h3>
+<p><img alt="Falsos negativos no teste" src="figures/08_falsos_negativos.png" /></p>
+<p>Três modos. <strong>Buracos minúsculos e distantes</strong> em rodovia, de poucos pixels (<code>106</code>, <code>165</code>, <code>G0025080</code>) — irrelevantes para a aplicação enquanto estão longe, e detectáveis quando o veículo se aproxima. <strong>Baixo contraste em asfalto molhado e remendado</strong> (<code>55</code>, com três instâncias perdidas, duas delas grandes: manchas claras de desgaste anotadas como buraco, de fronteira discutível). <strong>Contraluz com <em>flare</em></strong> (<code>G0010770</code>), que lava o contraste do piso.</p>
+<h3 id="73-revocacao-por-tamanho">7.3 Revocação por tamanho</h3>
+<table>
+<thead>
+<tr>
+<th>Tamanho da instância anotada</th>
+<th>Instâncias</th>
+<th>Detectadas</th>
+<th>Revocação</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>pequena (&lt; 32² px)</td>
+<td>198</td>
+<td>97</td>
+<td>0,490</td>
+</tr>
+<tr>
+<td>média (32²–96² px)</td>
+<td>208</td>
+<td>115</td>
+<td>0,553</td>
+</tr>
+<tr>
+<td>grande (&gt; 96² px)</td>
+<td>134</td>
+<td>68</td>
+<td>0,507</td>
+</tr>
+</tbody>
+</table>
+<p>A revocação é semelhante entre tamanhos: o tamanho não explica sozinho os falsos negativos. As instâncias grandes perdidas são, em geral, áreas de desgaste anotadas de forma generosa em asfalto molhado — o caso <code>55</code> acima — e não buracos nítidos. A fronteira semântica entre buraco, desgaste e rachadura não está definida no dataset, e o modelo herda essa indefinição.</p>
+<hr />
+<h2 id="8-politica-de-decisao">8. Política de decisão</h2>
+<p>O limiar de confiança é um ponto de operação, e a tabela da seção 4.3 é a análise de sensibilidade: entre <code>conf = 0,20</code> e <code>conf = 0,35</code> a precisão vai de 0,57 a 0,71 enquanto a revocação cai de 0,52 para 0,41. Para o produto descrito na seção 2 — uma lista de manutenção revisada por um operador antes da ordem de serviço — um falso positivo custa segundos de revisão; um falso negativo é um buraco que não entra na lista. Isso justifica operar em <code>conf = 0,25</code> ou abaixo, e não no limiar de precisão 0,70 que a regra inicial sugeria.</p>
+<p>Duas observações operacionais. Primeiro, como o vídeo passa pelo mesmo buraco em dezenas de quadros, a revocação efetiva por buraco é maior que a revocação por quadro medida no teste: basta detectá-lo em um quadro para que o rastreador o mantenha (seção 9). Segundo, como os falsos positivos mais confiantes são buracos reais não anotados, a fila de revisão do operador recebe menos alarmes falsos do que a precisão de 0,645 sugere.</p>
+<hr />
+<h2 id="9-aplicacao-em-video">9. Aplicação em vídeo</h2>
+<!-- PREENCHER NO DOMINGO após gravar o vídeo (≥ 30 s) e executar a célula 7 do notebook ou os comandos abaixo:
+     - link do vídeo com inferência (máscaras) e do vídeo com rastreamento (IDs ByteTrack)
+     - duração, resolução, FPS do vídeo
+     - detecções somadas por quadro × buracos únicos (IDs) — o argumento "não contar duas vezes"
+     - trocas de ID observadas (2–3 casos) e onde ocorreram (curvas, freadas)
+     - latência média ms/quadro na GPU usada e FPS de inferência
+     - observações de generalização: vias brasileiras vs. dataset estrangeiro (asfalto, sombras, faixas)
+-->
+
+<p>A inferência no vídeo usa o segmentador (caixas + máscaras) com <code>conf = 0,25</code> e <code>IoU NMS = 0,7</code>, e o rastreador <strong>ByteTrack</strong> integrado ao Ultralytics (<code>model.track(..., tracker="bytetrack.yaml", persist=True)</code>), que associa detecções de baixa confiança num segundo estágio — útil quando o buraco entra e sai de oclusão parcial. Buracos são estáticos no mundo; o movimento é da câmera. O filtro de Kalman de velocidade constante do ByteTrack funciona bem em velocidade estável e tende a trocar identidades em freadas e curvas fechadas; a contagem por identidade única é o que evita contar o mesmo buraco a cada quadro.</p>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #007020; font-weight: bold">from</span> <span style="color: #0e84b5; font-weight: bold">ultralytics</span> <span style="color: #007020; font-weight: bold">import</span> YOLO
+seg <span style="color: #666666">=</span> YOLO(<span style="color: #4070a0">&quot;runs/segment/seg_s/weights/best.pt&quot;</span>)
+seg<span style="color: #666666">.</span>predict(<span style="color: #4070a0">&quot;video/cenario.mp4&quot;</span>, conf<span style="color: #666666">=</span><span style="color: #40a070">0.25</span>, iou<span style="color: #666666">=</span><span style="color: #40a070">0.7</span>, imgsz<span style="color: #666666">=</span><span style="color: #40a070">640</span>, save<span style="color: #666666">=</span><span style="color: #007020; font-weight: bold">True</span>, project<span style="color: #666666">=</span><span style="color: #4070a0">&quot;video&quot;</span>, name<span style="color: #666666">=</span><span style="color: #4070a0">&quot;seg&quot;</span>)
+seg<span style="color: #666666">.</span>track(<span style="color: #4070a0">&quot;video/cenario.mp4&quot;</span>, tracker<span style="color: #666666">=</span><span style="color: #4070a0">&quot;bytetrack.yaml&quot;</span>, persist<span style="color: #666666">=</span><span style="color: #007020; font-weight: bold">True</span>, conf<span style="color: #666666">=</span><span style="color: #40a070">0.25</span>, iou<span style="color: #666666">=</span><span style="color: #40a070">0.7</span>, save<span style="color: #666666">=</span><span style="color: #007020; font-weight: bold">True</span>)
+</code></pre></div>
+
+<hr />
+<h2 id="10-conclusao">10. Conclusão</h2>
+<p>O sistema entrega detecção e segmentação de buracos com <strong>mAP@0,5 de 0,487</strong> e <strong>mAP@0,5:0,95 de 0,287</strong> no teste para a detecção, <strong>mask mAP@0,5 de 0,319</strong> para a segmentação, e precisão 0,645 / revocação 0,518 no ponto de operação escolhido em validação. A máscara acrescenta à caixa exatamente o que o problema pede: a área real do dano, que a caixa superestima em 44% no caso típico.</p>
+<p>Os números são modestos em comparação com o que se vê publicado sobre datasets de buracos, e a análise de erros explica por quê sem apelar para o modelo: as anotações do dataset são incompletas e imprecisas — buracos reais sem anotação, polígonos que englobam asfalto, fronteiras indefinidas entre buraco e desgaste. Um modelo avaliado contra um gabarito com esses defeitos parece pior do que é.</p>
+<h3 id="achados-honestos">Achados honestos</h3>
+<p><strong>Os falsos positivos mais confiantes são buracos reais.</strong> Seis dos oito falsos positivos de maior score no teste estão sobre buracos não anotados. A precisão reportada é um limite inferior, e a intervenção de maior retorno não é no modelo: é re-anotar o conjunto de teste.</p>
+<p><strong>O refino com SAM melhorou pouco a mediana — porque os humanos anotam mal.</strong> O SAM concorda 0,70 com os polígonos humanos; um retângulo concorda 0,68. A inspeção visual mostra que, nos casos de baixa concordância, o SAM está mais perto da borda real do que o anotador. Adotar as máscaras do SAM foi a decisão certa, mas o número que a justifica é o P90, não a mediana.</p>
+<p><strong>Um modelo maior não ajudou; mais resolução ajudou.</strong> O YOLO11m ficou abaixo do YOLO11s; o YOLO11s em 800 px ficou acima de ambos. Com 1 076 imagens e 40% de instâncias pequenas, o gargalo é informação por buraco, não capacidade do modelo.</p>
+<p><strong>O tamanho da instância não explica os falsos negativos.</strong> A revocação é praticamente igual em instâncias pequenas, médias e grandes — as grandes perdidas são áreas de desgaste anotadas de forma generosa, não buracos nítidos. A fronteira semântica do rótulo é o problema.</p>
+<p><strong>O teste foi tocado três vezes, não uma.</strong> Duas execuções anteriores à avaliação final foram descartadas por erro de configuração (limiar errado; casamento não um-para-um). Nenhum parâmetro foi alterado a partir delas, mas a rigor o protocolo de teste único não foi cumprido à letra, e preferimos registrar isso a omiti-lo.</p>
+<h3 id="trabalhos-futuros">Trabalhos futuros</h3>
+<p>Re-anotar o conjunto de teste, ou ao menos os falsos positivos de alta confiança, para medir o sistema com um gabarito justo. Treinar em 800 px como configuração principal. Coletar e anotar imagens de vias brasileiras — o vídeo desta entrega é o primeiro teste de generalização de domínio. Reduzir o IoU do NMS para 0,5 e medir o efeito nas caixas aninhadas. Para operar: exportar para ONNX/TensorRT com a perda de acurácia medida por estágio de quantização (na GTX 1060 o YOLO11s infere em ~12 ms por imagem, mas o orçamento de 33 ms a 30 FPS inclui decodificação e rastreamento — detectar a cada N quadros e rastrear nos intermediários é o padrão para caber na borda); monitorar a distribuição dos scores e a taxa de detecções por trecho para flagrar o drift de um modelo treinado em vias estrangeiras; e processar na borda armazenando apenas metadados, porque o vídeo captura placas e pessoas.</p>
+<hr />
+<p><strong>Declaração de uso de IA.</strong> Ferramentas de IA generativa foram usadas como apoio na organização do cronograma, na estruturação inicial dos scripts e na revisão do texto; todo o código foi executado, verificado e adaptado pelos integrantes, e os resultados, figuras e análises são de autoria do grupo. <!-- ajustar ao que de fato ocorreu --></p>
+<p><strong>Referências.</strong> Dataset: <em>Potholes and Roads Instance Segmentation</em>, pothole-vsmtu, Roboflow Universe, v5, CC BY 4.0 · Jocher, G. et al. <em>Ultralytics YOLO11</em>, 2024 · Redmon, J. et al. <em>You Only Look Once</em>, CVPR 2016 · Kirillov, A. et al. <em>Segment Anything</em>, ICCV 2023 · Zhang, Y. et al. <em>ByteTrack</em>, ECCV 2022 · Kalman, R. E., 1960 · Heriberto, R. <em>Apostilas de Visão Computacional</em> (Vols. I e II), <em>Vídeo com Visão Computacional</em> e <em>Reconhecimento de Padrões</em>, CEUB, 2026.</p>
+<p><strong>Reprodução:</strong></p>
+<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code>git<span style="color: #bbbbbb"> </span>clone<span style="color: #bbbbbb"> </span>https://github.com/diegoedataengineer/sistematizacao-visao-computacional
+<span style="color: #007020">cd</span><span style="color: #bbbbbb"> </span>sistematizacao-visao-computacional<span style="color: #bbbbbb"> </span><span style="color: #666666">&amp;&amp;</span><span style="color: #bbbbbb"> </span>pip<span style="color: #bbbbbb"> </span>install<span style="color: #bbbbbb"> </span>-r<span style="color: #bbbbbb"> </span>requirements.txt
+gh<span style="color: #bbbbbb"> </span>release<span style="color: #bbbbbb"> </span>download<span style="color: #bbbbbb"> </span>v1.0<span style="color: #bbbbbb"> </span>-p<span style="color: #bbbbbb"> </span><span style="color: #4070a0">&quot;*.pt&quot;</span><span style="color: #bbbbbb">                 </span><span style="color: #60a0b0; font-style: italic"># pesos treinados</span>
+python<span style="color: #bbbbbb"> </span>scripts/avaliar.py<span style="color: #bbbbbb"> </span>--det<span style="color: #bbbbbb"> </span>runs/detect/det_s<span style="color: #bbbbbb"> </span>--seg<span style="color: #bbbbbb"> </span>runs/segment/seg_s<span style="color: #bbbbbb"> </span>--regra<span style="color: #bbbbbb"> </span>f1
+python<span style="color: #bbbbbb"> </span>tools/build_report.py<span style="color: #bbbbbb">                        </span><span style="color: #60a0b0; font-style: italic"># este relatório em HTML e PDF</span>
+</code></pre></div></body></html>
