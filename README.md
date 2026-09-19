@@ -2,7 +2,7 @@
 
 Sistematização da disciplina **Visão Computacional e Reconhecimento de Padrões** (pós-graduação CEUB, Prof. Dr. Romes Heriberto Pires de Araújo) — cenário *Cidades Inteligentes*.
 
-**Integrantes:** Diego Nunes de Morais <!-- adicionar os demais -->
+**Autor:** Diego Nunes de Morais — trabalho individual
 
 ## Problema
 

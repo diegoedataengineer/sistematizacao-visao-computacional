@@ -46,8 +46,8 @@ h2#apêndice--código-fonte { page-break-before: always; }
 <td>Visão Computacional e Reconhecimento de Padrões — Prof. Dr. Romes Heriberto Pires de Araújo</td>
 </tr>
 <tr>
-<td><strong>Integrantes</strong></td>
-<td>Diego Nunes de Morais <!-- adicionar os demais --></td>
+<td><strong>Autor</strong></td>
+<td>Diego Nunes de Morais — trabalho individual</td>
 </tr>
 <tr>
 <td><strong>Data</strong></td>
@@ -238,7 +238,7 @@ h2#apêndice--código-fonte { page-break-before: always; }
 </tbody>
 </table>
 <p><img alt="Precisão × revocação por limiar de confiança (validação)" src="figures/05_precisao_revocacao_limiar.png" /></p>
-<p>A regra inicial do projeto (ADR-S05) era "maior revocação com precisão ≥ 0,70", pensada antes de ver a curva; aplicada a este modelo, ela escolheria <code>conf = 0,35</code> e perderia 59% dos buracos. Apresentamos ao grupo três opções com os números reais — piso de precisão 0,70, máximo F1, piso 0,55 — e adotamos o <strong>máximo F1: <code>conf = 0,25</code></strong>, precisão 0,62 e revocação 0,49 em validação. É a regra mais defensável e, para manutenção viária, o custo de um buraco não detectado pesa mais que o de um alarme revisado por um operador. <code>IoU NMS = 0,7</code>. O mesmo limiar vale para teste, vídeo e demonstração.</p>
+<p>A regra inicial do projeto (ADR-S05) era "maior revocação com precisão ≥ 0,70", pensada antes de ver a curva; aplicada a este modelo, ela escolheria <code>conf = 0,35</code> e perderia 59% dos buracos. Comparamos três opções com os números reais — piso de precisão 0,70, máximo F1, piso 0,55 — e adotamos o <strong>máximo F1: <code>conf = 0,25</code></strong>, precisão 0,62 e revocação 0,49 em validação. É a regra mais defensável e, para manutenção viária, o custo de um buraco não detectado pesa mais que o de um alarme revisado por um operador. <code>IoU NMS = 0,7</code>. O mesmo limiar vale para teste, vídeo e demonstração.</p>
 <h3 id="44-metricas">4.4 Métricas</h3>
 <p><strong>mAP@0,5 e mAP@0,5:0,95</strong> (caixas e máscaras), pelo Ultralytics no limiar padrão 0,001 — o protocolo COCO; <strong>precisão e revocação no ponto de operação</strong>, por casamento um-para-um com IoU ≥ 0,5 — o que um sistema real entrega com <code>conf = 0,25</code>; <strong>matriz de confusão</strong>; <strong>IoU e Dice por imagem</strong> das máscaras, contra as referências refinadas e contra as originais; <strong>análise qualitativa</strong> de falsos positivos e negativos e revocação por tamanho. Acurácia não aparece: com classe única e fundo dominante, seria alta e inútil.</p>
 <hr />
@@ -545,7 +545,7 @@ seg<span style="color: #666666">.</span>track(<span style="color: #4070a0">&quot
 <h3 id="trabalhos-futuros">Trabalhos futuros</h3>
 <p>Re-anotar o conjunto de teste, ou ao menos os falsos positivos de alta confiança, para medir o sistema com um gabarito justo. Treinar em 800 px como configuração principal. Coletar e anotar imagens de vias brasileiras — o vídeo desta entrega é o primeiro teste de generalização de domínio. Reduzir o IoU do NMS para 0,5 e medir o efeito nas caixas aninhadas. Para operar: exportar para ONNX/TensorRT com a perda de acurácia medida por estágio de quantização (na GTX 1060 o YOLO11s infere em ~12 ms por imagem, mas o orçamento de 33 ms a 30 FPS inclui decodificação e rastreamento — detectar a cada N quadros e rastrear nos intermediários é o padrão para caber na borda); monitorar a distribuição dos scores e a taxa de detecções por trecho para flagrar o drift de um modelo treinado em vias estrangeiras; e processar na borda armazenando apenas metadados, porque o vídeo captura placas e pessoas.</p>
 <hr />
-<p><strong>Declaração de uso de IA.</strong> Ferramentas de IA generativa foram usadas como apoio na organização do cronograma, na estruturação inicial dos scripts e na revisão do texto; todo o código foi executado, verificado e adaptado pelos integrantes, e os resultados, figuras e análises são de autoria do grupo. <!-- ajustar ao que de fato ocorreu --></p>
+<p><strong>Declaração de uso de IA.</strong> Ferramentas de IA generativa foram usadas como apoio na organização do cronograma, na estruturação inicial dos scripts e na revisão do texto; todo o código foi executado, verificado e adaptado pelo autor, e os resultados, figuras e análises são de sua autoria. <!-- ajustar ao que de fato ocorreu --></p>
 <p><strong>Referências.</strong> Dataset: <em>Potholes and Roads Instance Segmentation</em>, pothole-vsmtu, Roboflow Universe, v5, CC BY 4.0 · Jocher, G. et al. <em>Ultralytics YOLO11</em>, 2024 · Redmon, J. et al. <em>You Only Look Once</em>, CVPR 2016 · Kirillov, A. et al. <em>Segment Anything</em>, ICCV 2023 · Zhang, Y. et al. <em>ByteTrack</em>, ECCV 2022 · Kalman, R. E., 1960 · Heriberto, R. <em>Apostilas de Visão Computacional</em> (Vols. I e II), <em>Vídeo com Visão Computacional</em> e <em>Reconhecimento de Padrões</em>, CEUB, 2026.</p>
 <p><strong>Reprodução:</strong></p>
 <div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code>git<span style="color: #bbbbbb"> </span>clone<span style="color: #bbbbbb"> </span>https://github.com/diegoedataengineer/sistematizacao-visao-computacional

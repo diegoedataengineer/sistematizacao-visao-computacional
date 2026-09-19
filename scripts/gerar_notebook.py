@@ -26,7 +26,7 @@ md(f"""
 
 **Sistematização — Visão Computacional e Reconhecimento de Padrões (CEUB) · Prof. Romes Heriberto**
 
-Integrantes: Diego Nunes de Morais <!-- adicionar os demais -->
+Autor: Diego Nunes de Morais — trabalho individual
 
 Repositório: {REPO}
 

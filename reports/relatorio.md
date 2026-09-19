@@ -7,7 +7,7 @@
 | | |
 |---|---|
 | **Disciplina** | Visão Computacional e Reconhecimento de Padrões — Prof. Dr. Romes Heriberto Pires de Araújo |
-| **Integrantes** | Diego Nunes de Morais <!-- adicionar os demais --> |
+| **Autor** | Diego Nunes de Morais — trabalho individual |
 | **Data** | 20 de setembro de 2026 |
 | **Cenário** | Cidades Inteligentes — buracos em vias |
 | **Repositório** | [https://github.com/diegoedataengineer/sistematizacao-visao-computacional](https://github.com/diegoedataengineer/sistematizacao-visao-computacional) |
@@ -118,7 +118,7 @@ Detectores produzem scores; o limiar transforma score em decisão e é uma escol
 
 ![Precisão × revocação por limiar de confiança (validação)](figures/05_precisao_revocacao_limiar.png)
 
-A regra inicial do projeto (ADR-S05) era "maior revocação com precisão ≥ 0,70", pensada antes de ver a curva; aplicada a este modelo, ela escolheria `conf = 0,35` e perderia 59% dos buracos. Apresentamos ao grupo três opções com os números reais — piso de precisão 0,70, máximo F1, piso 0,55 — e adotamos o **máximo F1: `conf = 0,25`**, precisão 0,62 e revocação 0,49 em validação. É a regra mais defensável e, para manutenção viária, o custo de um buraco não detectado pesa mais que o de um alarme revisado por um operador. `IoU NMS = 0,7`. O mesmo limiar vale para teste, vídeo e demonstração.
+A regra inicial do projeto (ADR-S05) era "maior revocação com precisão ≥ 0,70", pensada antes de ver a curva; aplicada a este modelo, ela escolheria `conf = 0,35` e perderia 59% dos buracos. Comparamos três opções com os números reais — piso de precisão 0,70, máximo F1, piso 0,55 — e adotamos o **máximo F1: `conf = 0,25`**, precisão 0,62 e revocação 0,49 em validação. É a regra mais defensável e, para manutenção viária, o custo de um buraco não detectado pesa mais que o de um alarme revisado por um operador. `IoU NMS = 0,7`. O mesmo limiar vale para teste, vídeo e demonstração.
 
 ### 4.4 Métricas
 
@@ -289,7 +289,7 @@ Re-anotar o conjunto de teste, ou ao menos os falsos positivos de alta confianç
 
 ---
 
-**Declaração de uso de IA.** Ferramentas de IA generativa foram usadas como apoio na organização do cronograma, na estruturação inicial dos scripts e na revisão do texto; todo o código foi executado, verificado e adaptado pelos integrantes, e os resultados, figuras e análises são de autoria do grupo. <!-- ajustar ao que de fato ocorreu -->
+**Declaração de uso de IA.** Ferramentas de IA generativa foram usadas como apoio na organização do cronograma, na estruturação inicial dos scripts e na revisão do texto; todo o código foi executado, verificado e adaptado pelo autor, e os resultados, figuras e análises são de sua autoria. <!-- ajustar ao que de fato ocorreu -->
 
 **Referências.** Dataset: *Potholes and Roads Instance Segmentation*, pothole-vsmtu, Roboflow Universe, v5, CC BY 4.0 · Jocher, G. et al. *Ultralytics YOLO11*, 2024 · Redmon, J. et al. *You Only Look Once*, CVPR 2016 · Kirillov, A. et al. *Segment Anything*, ICCV 2023 · Zhang, Y. et al. *ByteTrack*, ECCV 2022 · Kalman, R. E., 1960 · Heriberto, R. *Apostilas de Visão Computacional* (Vols. I e II), *Vídeo com Visão Computacional* e *Reconhecimento de Padrões*, CEUB, 2026.
 
@@ -308,7 +308,7 @@ python tools/build_report.py                        # este relatório em HTML e 
 <!-- INICIO-APENDICE-CODIGO -->
 
 ## Apêndice — Código-fonte
-Listagem integral do código que produziu os resultados deste relatório. no commit `8f1cbce`. As seções seguem a ordem do pipeline — do dado bruto ao relatório — e não a ordem alfabética.
+Listagem integral do código que produziu os resultados deste relatório. no commit `e3c9086`. As seções seguem a ordem do pipeline — do dado bruto ao relatório — e não a ordem alfabética.
 
 Este apêndice é **gerado a partir dos arquivos do repositório**. não transcrito: código copiado para dentro de um documento diverge do original no primeiro ajuste.
 
@@ -1499,7 +1499,7 @@ md(f"""
 
 **Sistematização — Visão Computacional e Reconhecimento de Padrões (CEUB) · Prof. Romes Heriberto**
 
-Integrantes: Diego Nunes de Morais <!-- adicionar os demais -->
+Autor: Diego Nunes de Morais — trabalho individual
 
 Repositório: {REPO}
 
