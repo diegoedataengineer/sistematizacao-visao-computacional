@@ -1,4 +1,4 @@
-"""Fase 4 — avaliação do projeto (SPEC-S04/S03), com protocolo de teste único (ADR-S05).
+"""Fase 4 — avaliação do projeto, com protocolo de teste único.
 
 Etapas:
   1. varredura de conf em VAL (det) → figs/pr_limiar.png; escolha do ponto de operação

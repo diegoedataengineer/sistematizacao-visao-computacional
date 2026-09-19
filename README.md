@@ -23,7 +23,7 @@ Priorizar a manutenção viária a partir de imagens capturadas por veículos em
 | YOLO11s-seg | val | 0,508 | 0,297 | 0,649 | 0,514 | 0,306 | 0,132 |
 | YOLO11s-seg | **teste** | 0,493 | 0,292 | 0,663 | 0,496 | 0,319 | 0,156 |
 
-`conf = 0,25` · `IoU NMS = 0,7` · avaliação única no teste (ADR-S05). Relatório completo em [reports/relatorio.md](reports/relatorio.md) e em [PDF](reports/relatorio.pdf).
+`conf = 0,25` · `IoU NMS = 0,7` · avaliação única no teste. Relatório completo em [reports/relatorio.md](reports/relatorio.md) e em [PDF](reports/relatorio.pdf).
 
 Vídeo com inferência: <!-- link --> · Vídeo com rastreamento (ByteTrack): <!-- link -->
 
@@ -37,7 +37,7 @@ Vídeo com inferência: <!-- link --> · Vídeo com rastreamento (ByteTrack): <!
 | validação | 138 | 627 |
 | teste | 141 | 540 |
 
-Detalhes da análise exploratória em [docs/proposta.md](docs/proposta.md) e `figs/eda.png`. Imagens **não** são versionadas; ver [Reprodução](#reprodução).
+Detalhes da análise exploratória em `figs/eda.png` e na seção 3 do relatório. Imagens **não** são versionadas; ver [Reprodução](#reprodução).
 
 ## Estrutura
 
@@ -53,7 +53,6 @@ Detalhes da análise exploratória em [docs/proposta.md](docs/proposta.md) e `fi
 ├── notebooks/             notebook Colab executável (Fase 5)
 ├── reports/               relatório (Markdown, HTML e PDF) e figuras numeradas
 ├── tools/build_report.py  Markdown → HTML → PDF com apêndice de código gerado do repositório
-├── docs/                  proposta, plano de execução, ADRs e specs
 ├── figs/                  figuras geradas (EDA, curvas, painéis, erros)
 ├── dataset/               (ignorado) imagens e labels
 ├── runs/                  (ignorado) saídas de treino/avaliação
