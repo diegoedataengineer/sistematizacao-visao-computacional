@@ -1,0 +1,5 @@
+# Dependências apenas da MONTAGEM DO RELATÓRIO (Markdown → HTML → PDF).
+# Ficam fora de requirements.txt de propósito: não participam do treino nem da inferência.
+# A conversão final para PDF usa o Google Chrome em modo headless, já presente no sistema.
+markdown==3.7
+pygments==2.18.0

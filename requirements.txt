@@ -1,0 +1,11 @@
+ultralytics>=8.3
+roboflow
+supervision
+opencv-python
+numpy
+pandas
+matplotlib
+pyyaml
+# torch/torchvision: instalar conforme a plataforma
+#   Colab: já incluso
+#   local (CUDA 12.x): pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126

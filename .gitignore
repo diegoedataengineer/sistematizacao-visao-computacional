@@ -1,0 +1,28 @@
+# dados e artefatos pesados (ficam no Drive)
+dataset/
+runs/
+video/*.mp4
+video/*.avi
+video/**/*.mp4
+video/**/*.avi
+*.pt
+*.onnx
+*.engine
+*.zip
+
+# credenciais
+.env
+*.key
+roboflow.json
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# sistema / editor
+.DS_Store
+.vscode/
+*.swp
+.git-antigo/

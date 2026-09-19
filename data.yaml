@@ -1,0 +1,7 @@
+path: dataset   # ajuste para o caminho absoluto do dataset no seu ambiente
+train: train/images
+val: valid/images
+test: test/images
+nc: 1
+names:
+- pothole
