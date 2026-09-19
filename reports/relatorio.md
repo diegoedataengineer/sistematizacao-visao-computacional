@@ -289,7 +289,7 @@ Re-anotar o conjunto de teste, ou ao menos os falsos positivos de alta confianç
 
 ---
 
-**Declaração de uso de IA.** Ferramentas de IA generativa foram usadas como apoio na organização do cronograma, na estruturação inicial dos scripts e na revisão do texto; todo o código foi executado, verificado e adaptado pelo autor, e os resultados, figuras e análises são de sua autoria. <!-- ajustar ao que de fato ocorreu -->
+**Declaração de uso de IA.** Ferramentas de IA generativa foram utilizadas exclusivamente como suporte na organização do cronograma, na estruturação inicial dos scripts e na revisão linguística do texto. Toda a execução, verificação e adaptação do código foram realizadas pelo autor. Os resultados obtidos, as figuras geradas e as análises textuais são de inteira responsabilidade e autoria do autor.
 
 **Referências.** Dataset: *Potholes and Roads Instance Segmentation*, pothole-vsmtu, Roboflow Universe, v5, CC BY 4.0 · Jocher, G. et al. *Ultralytics YOLO11*, 2024 · Redmon, J. et al. *You Only Look Once*, CVPR 2016 · Kirillov, A. et al. *Segment Anything*, ICCV 2023 · Zhang, Y. et al. *ByteTrack*, ECCV 2022 · Kalman, R. E., 1960 · Heriberto, R. *Apostilas de Visão Computacional* (Vols. I e II), *Vídeo com Visão Computacional* e *Reconhecimento de Padrões*, CEUB, 2026.
 
@@ -308,7 +308,7 @@ python tools/build_report.py                        # este relatório em HTML e 
 <!-- INICIO-APENDICE-CODIGO -->
 
 ## Apêndice — Código-fonte
-Listagem integral do código que produziu os resultados deste relatório. no commit `46eca5e`. As seções seguem a ordem do pipeline — do dado bruto ao relatório — e não a ordem alfabética.
+Listagem integral do código que produziu os resultados deste relatório. no commit `cbf0404`. As seções seguem a ordem do pipeline — do dado bruto ao relatório — e não a ordem alfabética.
 
 Este apêndice é **gerado a partir dos arquivos do repositório**. não transcrito: código copiado para dentro de um documento diverge do original no primeiro ajuste.
 

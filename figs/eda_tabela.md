@@ -1,8 +1,8 @@
 | split | imagens | instâncias | inst/img | imgs sem buraco | luminância média | inst < 32² px |
 |---|---|---|---|---|---|---|
-| test | 141 | 540 | 3.83 | 11 | 131.5 | 200 |
-| train | 1076 | 5097 | 4.74 | 29 | 129.68 | 2016 |
-| valid | 138 | 627 | 4.54 | 6 | 126.78 | 255 |
+| test | 141 | 540 | 3.83 | 11 | 131.5 | 252 |
+| train | 1076 | 5097 | 4.74 | 29 | 129.68 | 2472 |
+| valid | 138 | 627 | 4.54 | 6 | 126.78 | 309 |
 
 Resoluções mais frequentes (w×h → imagens):
 
