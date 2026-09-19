@@ -193,33 +193,21 @@ if "iou_dice_test_labels_original" in R: print("IoU/Dice no teste vs anotações
 md("""
 ## 5. Vídeo
 
-Inferência do segmentador (caixas + máscaras) no vídeo real do cenário, com o mesmo ponto de operação, e rastreamento ByteTrack para contar buracos únicos. Coloque o vídeo em `video/cenario.mp4` (no Colab a célula pede o upload).
+Inferência do segmentador (caixas + máscaras) no vídeo real do cenário, com o mesmo ponto de operação, e rastreamento ByteTrack para contar buracos únicos. O vídeo desta entrega é um trecho de 90,7 s de uma rodovia da Paraíba (YouTube, ID `I0HsZ2rsW8M`), salvo em `video/cenario.mp4` (no Colab a célula pede o upload). A célula chama `scripts/video.py`, que também gera as figuras da seção 9 do relatório.
 """),
 code("""
 #@title 5.1 Inferência e rastreamento (ByteTrack)
-import cv2, time
-from ultralytics import YOLO
 os.makedirs("video", exist_ok=True); VIDEO = "video/cenario.mp4"
 if not Path(VIDEO).exists() and IN_COLAB:
     from google.colab import files
     up = files.upload(); os.rename(list(up)[0], VIDEO)
 if Path(VIDEO).exists():
-    CONF, IOU_NMS = R["conf"], R["iou_nms"]
-    seg = YOLO("runs/segment/seg_s/weights/best.pt")
-    seg.predict(source=VIDEO, conf=CONF, iou=IOU_NMS, imgsz=640, save=True, project="video", name="seg", exist_ok=True, verbose=False)
-    ids, n_det, tempos = set(), 0, []
-    cap = cv2.VideoCapture(VIDEO); W, H, fps = int(cap.get(3)), int(cap.get(4)), cap.get(5)
-    out = cv2.VideoWriter("video/cenario_track.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (W, H))
-    while True:
-        ok, q = cap.read()
-        if not ok: break
-        t0 = time.perf_counter()
-        r = seg.track(q, persist=True, tracker="bytetrack.yaml", conf=CONF, iou=IOU_NMS, imgsz=640, verbose=False)[0]
-        tempos.append((time.perf_counter() - t0) * 1000)
-        if r.boxes.id is not None: ids.update(r.boxes.id.int().tolist()); n_det += len(r.boxes)
-        out.write(r.plot())
-    cap.release(); out.release()
-    print(f"{W}x{H} @ {fps:.0f} FPS · buracos únicos (IDs) = {len(ids)} · detecções somadas por quadro = {n_det} · {np.mean(tempos):.1f} ms/quadro ({1000/np.mean(tempos):.1f} FPS)")
+    # segmentador no ponto de operação do teste + ByteTrack; grava video/cenario_seg.mp4 (via video/seg/) e video/cenario_track.mp4
+    %run scripts/video.py --video {VIDEO} --pesos runs/segment/seg_s/weights/best.pt --conf {R["conf"]} --iou-nms {R["iou_nms"]}
+    V = json.load(open("figs/video_resumo.json"))
+    print(f"\\n{V['largura']}x{V['altura']} @ {V['fps']} FPS · {V['duracao_s']} s · detecções somadas = {V['deteccoes_somadas']} · buracos únicos (IDs) = {V['ids_unicos']} "
+          f"(trilhas ≥ 5 quadros: {V['ids_estaveis_5q']}) · trocas de ID candidatas = {V['trocas_id_candidatas']} · {V['ms_por_quadro']} ms/quadro ({V['fps_inferencia']} FPS)")
+    display(Image("figs/video_contagem.png", width=900)); display(Image("figs/video_quadros.png", width=1000))
 else:
     print("vídeo ausente: grave um vídeo (≥ 30 s) do cenário e salve em video/cenario.mp4")
 """),

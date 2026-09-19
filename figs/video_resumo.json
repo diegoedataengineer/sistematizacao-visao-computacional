@@ -1,0 +1,176 @@
+{
+  "video": "video/cenario.mp4",
+  "largura": 1280,
+  "altura": 720,
+  "fps": 29.97,
+  "quadros": 2719,
+  "duracao_s": 90.7,
+  "conf": 0.25,
+  "iou_nms": 0.7,
+  "deteccoes_somadas": 3617,
+  "quadros_com_deteccao": 2155,
+  "ids_unicos": 227,
+  "ids_estaveis_5q": 107,
+  "trilhas_curtas_lt5q": 120,
+  "trocas_id_candidatas": 22,
+  "trocas": [
+    {
+      "de": 3,
+      "para": 9,
+      "quadro_fim": 19,
+      "quadro_ini": 32,
+      "t_s": 1.1
+    },
+    {
+      "de": 175,
+      "para": 180,
+      "quadro_fim": 270,
+      "quadro_ini": 272,
+      "t_s": 9.1
+    },
+    {
+      "de": 270,
+      "para": 295,
+      "quadro_fim": 344,
+      "quadro_ini": 346,
+      "t_s": 11.5
+    },
+    {
+      "de": 547,
+      "para": 630,
+      "quadro_fim": 440,
+      "quadro_ini": 442,
+      "t_s": 14.7
+    },
+    {
+      "de": 547,
+      "para": 650,
+      "quadro_fim": 440,
+      "quadro_ini": 447,
+      "t_s": 14.9
+    },
+    {
+      "de": 618,
+      "para": 661,
+      "quadro_fim": 451,
+      "quadro_ini": 452,
+      "t_s": 15.1
+    },
+    {
+      "de": 630,
+      "para": 650,
+      "quadro_fim": 445,
+      "quadro_ini": 447,
+      "t_s": 14.9
+    },
+    {
+      "de": 660,
+      "para": 670,
+      "quadro_fim": 455,
+      "quadro_ini": 456,
+      "t_s": 15.2
+    },
+    {
+      "de": 738,
+      "para": 752,
+      "quadro_fim": 470,
+      "quadro_ini": 474,
+      "t_s": 15.8
+    },
+    {
+      "de": 743,
+      "para": 752,
+      "quadro_fim": 472,
+      "quadro_ini": 474,
+      "t_s": 15.8
+    },
+    {
+      "de": 756,
+      "para": 761,
+      "quadro_fim": 475,
+      "quadro_ini": 477,
+      "t_s": 15.9
+    },
+    {
+      "de": 765,
+      "para": 776,
+      "quadro_fim": 481,
+      "quadro_ini": 482,
+      "t_s": 16.1
+    },
+    {
+      "de": 1094,
+      "para": 1237,
+      "quadro_fim": 654,
+      "quadro_ini": 665,
+      "t_s": 22.2
+    },
+    {
+      "de": 1335,
+      "para": 1338,
+      "quadro_fim": 698,
+      "quadro_ini": 700,
+      "t_s": 23.4
+    },
+    {
+      "de": 1638,
+      "para": 1652,
+      "quadro_fim": 878,
+      "quadro_ini": 881,
+      "t_s": 29.4
+    },
+    {
+      "de": 2139,
+      "para": 2144,
+      "quadro_fim": 1456,
+      "quadro_ini": 1462,
+      "t_s": 48.8
+    },
+    {
+      "de": 2401,
+      "para": 2403,
+      "quadro_fim": 1746,
+      "quadro_ini": 1747,
+      "t_s": 58.3
+    },
+    {
+      "de": 2446,
+      "para": 2447,
+      "quadro_fim": 1766,
+      "quadro_ini": 1768,
+      "t_s": 59.0
+    },
+    {
+      "de": 2537,
+      "para": 2584,
+      "quadro_fim": 1916,
+      "quadro_ini": 1917,
+      "t_s": 64.0
+    },
+    {
+      "de": 2650,
+      "para": 2685,
+      "quadro_fim": 2107,
+      "quadro_ini": 2108,
+      "t_s": 70.3
+    },
+    {
+      "de": 2753,
+      "para": 2764,
+      "quadro_fim": 2151,
+      "quadro_ini": 2152,
+      "t_s": 71.8
+    },
+    {
+      "de": 2869,
+      "para": 2870,
+      "quadro_fim": 2197,
+      "quadro_ini": 2198,
+      "t_s": 73.3
+    }
+  ],
+  "vida_mediana_quadros": 4.0,
+  "vida_max_quadros": 137,
+  "ms_por_quadro": 21.1,
+  "fps_inferencia": 47.5
+}

@@ -1,6 +1,7 @@
 ultralytics>=8.3
 roboflow
 supervision
+lap                # rastreador ByteTrack (ultralytics.track)
 opencv-python
 numpy
 pandas

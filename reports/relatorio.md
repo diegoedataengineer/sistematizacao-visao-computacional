@@ -12,7 +12,7 @@
 | **Cenário** | Cidades Inteligentes — buracos em vias |
 | **Repositório** | [https://github.com/diegoedataengineer/sistematizacao-visao-computacional](https://github.com/diegoedataengineer/sistematizacao-visao-computacional) |
 | **Pesos treinados** | Release `v1.0` — `det_s_best.pt`, `seg_s_best.pt`, `baseline_n_best.pt` |
-| **Vídeo com inferência** | <!-- link (domingo) --> |
+| **Vídeos** | máscaras: `cenario_seg.mp4` · rastreamento: `cenario_track.mp4` — <!-- link do Drive --> |
 | **Vídeo-pitch** | <!-- link (domingo) --> |
 
 ---
@@ -239,29 +239,31 @@ A revocação é semelhante entre tamanhos: o tamanho não explica sozinho os fa
 
 O limiar de confiança é um ponto de operação, e a tabela da seção 4.3 é a análise de sensibilidade: entre `conf = 0,20` e `conf = 0,35` a precisão vai de 0,57 a 0,71 enquanto a revocação cai de 0,52 para 0,41. Para o produto descrito na seção 2 — uma lista de manutenção revisada por um operador antes da ordem de serviço — um falso positivo custa segundos de revisão; um falso negativo é um buraco que não entra na lista. Isso justifica operar em `conf = 0,25` ou abaixo, e não no limiar de precisão 0,70 que a regra inicial sugeria.
 
-Duas observações operacionais. Primeiro, como o vídeo passa pelo mesmo buraco em dezenas de quadros, a revocação efetiva por buraco é maior que a revocação por quadro medida no teste: basta detectá-lo em um quadro para que o rastreador o mantenha (seção 9). Segundo, como os falsos positivos mais confiantes são buracos reais não anotados, a fila de revisão do operador recebe menos alarmes falsos do que a precisão de 0,645 sugere.
+Duas observações operacionais. Primeiro, como o vídeo passa pelo mesmo buraco em dezenas de quadros, a revocação efetiva por buraco é maior que a revocação por quadro medida no teste: basta detectá-lo em alguns quadros para que ele entre na contagem por identidade — ainda que, como a seção 9 mostra, a detecção intermitente fragmente as trilhas. Segundo, como os falsos positivos mais confiantes são buracos reais não anotados, a fila de revisão do operador recebe menos alarmes falsos do que a precisão de 0,645 sugere.
 
 ---
 
 ## 9. Aplicação em vídeo
 
-<!-- PREENCHER NO DOMINGO após gravar o vídeo (≥ 30 s) e executar a célula 7 do notebook ou os comandos abaixo:
-     - link do vídeo com inferência (máscaras) e do vídeo com rastreamento (IDs ByteTrack)
-     - duração, resolução, FPS do vídeo
-     - detecções somadas por quadro × buracos únicos (IDs) — o argumento "não contar duas vezes"
-     - trocas de ID observadas (2–3 casos) e onde ocorreram (curvas, freadas)
-     - latência média ms/quadro na GPU usada e FPS de inferência
-     - observações de generalização: vias brasileiras vs. dataset estrangeiro (asfalto, sombras, faixas)
--->
+O vídeo de demonstração é um trecho de **90,7 s** (1280×720, 29,97 quadros/s, 2 719 quadros) de um registro público feito de dentro de um veículo numa rodovia da Paraíba (YouTube, *Estrada esburacada na Paraíba*, ID `I0HsZ2rsW8M`) — deliberadamente um teste de **generalização de domínio**: asfalto degradado com trechos de terra, luz forte e câmera trepidante, contra um dataset de treino estrangeiro. A inferência usa o segmentador no ponto de operação do teste (`conf = 0,25`, `IoU NMS = 0,7`, 640 px) e o rastreador **ByteTrack** do Ultralytics, que associa detecções de baixa confiança num segundo estágio. Buracos são estáticos; o movimento é da câmera, e o filtro de Kalman precisa acompanhar um alvo que cresce e desce na imagem conforme o carro se aproxima. Tudo está em `scripts/video.py` (célula 5.1 do notebook); os vídeos com máscaras e com IDs estão nos links da capa.
 
-A inferência no vídeo usa o segmentador (caixas + máscaras) com `conf = 0,25` e `IoU NMS = 0,7`, e o rastreador **ByteTrack** integrado ao Ultralytics (`model.track(..., tracker="bytetrack.yaml", persist=True)`), que associa detecções de baixa confiança num segundo estágio — útil quando o buraco entra e sai de oclusão parcial. Buracos são estáticos no mundo; o movimento é da câmera. O filtro de Kalman de velocidade constante do ByteTrack funciona bem em velocidade estável e tende a trocar identidades em freadas e curvas fechadas; a contagem por identidade única é o que evita contar o mesmo buraco a cada quadro.
+| Medida | Valor |
+|---|---|
+| Detecções somadas quadro a quadro | 3 617 (2 155 quadros com ≥ 1 detecção, 79%) |
+| Buracos únicos (IDs do ByteTrack) · trilhas ≥ 5 / < 5 quadros | **227** · 107 / 120 |
+| Vida mediana / máxima de uma trilha | 4 quadros / 137 quadros (4,6 s) |
+| Trocas de ID candidatas | 22, das quais 10 entre 14,7 s e 16,1 s |
+| Latência média (GTX 1060, inferência + rastreador) | 18–21 ms/quadro (≈ 50 FPS) |
 
-```python
-from ultralytics import YOLO
-seg = YOLO("runs/segment/seg_s/weights/best.pt")
-seg.predict("video/cenario.mp4", conf=0.25, iou=0.7, imgsz=640, save=True, project="video", name="seg")
-seg.track("video/cenario.mp4", tracker="bytetrack.yaml", persist=True, conf=0.25, iou=0.7, save=True)
-```
+![Detecções por quadro e buracos únicos acumulados no vídeo](figures/11_video_contagem.png)
+
+**Não contar duas vezes.** Somar detecções por quadro daria 3 617 "buracos"; contar identidades dá 227, dezesseis vezes menos, e é essa a contagem que serve a uma lista de manutenção. Mas o número ainda é um limite superior: metade das trilhas dura menos de 5 quadros. A detecção é intermitente (revocação de 0,52 por quadro), e quando o buraco reaparece numa posição que o Kalman não previu — o alvo muda de escala depressa ao se aproximar — o rastreador abre uma trilha nova em vez de recuperar a antiga. Uma contagem conservadora, só de trilhas com pelo menos 5 quadros, dá 107. O número verdadeiro é desconhecido: o vídeo não está anotado.
+
+**Trocas de ID.** Foram sinalizadas as trilhas que nascem até 15 quadros depois de outra terminar no mesmo lugar (IoU ≥ 0,3). Das 22, dez ocorrem entre 14,7 s e 16,1 s, o trecho mais danificado, com até 10 detecções por quadro: buracos vizinhos disputam as mesmas associações e a trepidação desloca todas as caixas de uma vez. As demais se espalham por trechos de um ou dois buracos por quadro e são fragmentação, não confusão entre alvos.
+
+![Quadros do vídeo com rastreamento](figures/12_video_quadros.png)
+
+**Generalização.** O modelo detecta os buracos nítidos, com confianças entre 0,3 e 0,55, e ignora a maior parte do desgaste extenso e do piso de terra — o comportamento da seção 7.2, agora noutro domínio. Não há falsos positivos sobre veículos, vegetação ou sombras nos quadros inspecionados, e ~20 ms/quadro cabem no orçamento de 33 ms a 30 FPS.
 
 ---
 
@@ -285,34 +287,22 @@ Os números são modestos em comparação com o que se vê publicado sobre datas
 
 ### Trabalhos futuros
 
-Re-anotar o conjunto de teste, ou ao menos os falsos positivos de alta confiança, para medir o sistema com um gabarito justo. Treinar em 800 px como configuração principal. Coletar e anotar imagens de vias brasileiras — o vídeo desta entrega é o primeiro teste de generalização de domínio. Reduzir o IoU do NMS para 0,5 e medir o efeito nas caixas aninhadas. Para operar: exportar para ONNX/TensorRT com a perda de acurácia medida por estágio de quantização (na GTX 1060 o YOLO11s infere em ~12 ms por imagem, mas o orçamento de 33 ms a 30 FPS inclui decodificação e rastreamento — detectar a cada N quadros e rastrear nos intermediários é o padrão para caber na borda); monitorar a distribuição dos scores e a taxa de detecções por trecho para flagrar o drift de um modelo treinado em vias estrangeiras; e processar na borda armazenando apenas metadados, porque o vídeo captura placas e pessoas.
+Re-anotar o conjunto de teste, ou ao menos os falsos positivos de alta confiança, para medir o sistema com um gabarito justo. Treinar em 800 px como configuração principal. Coletar e anotar imagens de vias brasileiras — o vídeo da seção 9 mostra que o modelo transfere para os buracos nítidos, mas não para o desgaste extenso. Ajustar o rastreador ao caso (buraco estático, câmera em movimento): buffer de trilha maior e associação por posição no chão em vez de na imagem, para reduzir a fragmentação medida. Para operar: exportar para ONNX/TensorRT medindo a perda por estágio de quantização; monitorar a distribuição dos scores e a taxa de detecções por trecho para flagrar o drift; e processar na borda armazenando apenas metadados, porque o vídeo captura placas e pessoas.
 
 ---
 
 **Declaração de uso de IA.** Ferramentas de IA generativa foram utilizadas exclusivamente como suporte na organização do cronograma, na estruturação inicial dos scripts e na revisão linguística do texto. Toda a execução, verificação e adaptação do código foram realizadas pelo autor. Os resultados obtidos, as figuras geradas e as análises textuais são de inteira responsabilidade e autoria do autor.
 
-**Referências.** Dataset: *Potholes and Roads Instance Segmentation*, pothole-vsmtu, Roboflow Universe, v5, CC BY 4.0 · Jocher, G. et al. *Ultralytics YOLO11*, 2024 · Redmon, J. et al. *You Only Look Once*, CVPR 2016 · Kirillov, A. et al. *Segment Anything*, ICCV 2023 · Zhang, Y. et al. *ByteTrack*, ECCV 2022 · Kalman, R. E., 1960 · Heriberto, R. *Apostilas de Visão Computacional* (Vols. I e II), *Vídeo com Visão Computacional* e *Reconhecimento de Padrões*, CEUB, 2026.
-
-**Reprodução:**
-
-```bash
-git clone https://github.com/diegoedataengineer/sistematizacao-visao-computacional
-cd sistematizacao-visao-computacional && pip install -r requirements.txt
-gh release download v1.0 -p "*.pt"                 # pesos treinados
-python scripts/avaliar.py --det runs/detect/det_s --seg runs/segment/seg_s --regra f1
-python tools/build_report.py                        # este relatório em HTML e PDF
-```
-
----
+**Referências.** Dataset: *Potholes and Roads Instance Segmentation*, pothole-vsmtu, Roboflow Universe, v5, CC BY 4.0 · Jocher, G. et al. *Ultralytics YOLO11*, 2024 · Redmon, J. et al. *You Only Look Once*, CVPR 2016 · Kirillov, A. et al. *Segment Anything*, ICCV 2023 · Zhang, Y. et al. *ByteTrack*, ECCV 2022 · Vídeo: *Estrada esburacada na Paraíba*, YouTube, ID I0HsZ2rsW8M · Heriberto, R. *Apostilas da disciplina*, CEUB, 2026.
 
 <!-- INICIO-APENDICE-CODIGO -->
 
 ## Apêndice — Código-fonte
-Listagem integral do código que produziu os resultados deste relatório. no commit `cbf0404`. As seções seguem a ordem do pipeline — do dado bruto ao relatório — e não a ordem alfabética.
+Listagem integral do código que produziu os resultados deste relatório. no commit `d63bfa6`. As seções seguem a ordem do pipeline — do dado bruto ao relatório — e não a ordem alfabética.
 
 Este apêndice é **gerado a partir dos arquivos do repositório**. não transcrito: código copiado para dentro de um documento diverge do original no primeiro ajuste.
 
-**12 arquivos · 1.362 linhas.**
+**13 arquivos · 1.492 linhas.**
 
 ### A. Dados
 
@@ -448,7 +438,7 @@ if __name__ == "__main__":
     main()
 ```
 
-#### `scripts/eda.py` · 99 linhas
+#### `scripts/eda.py` · 102 linhas
 ```python
 """Análise exploratória de um dataset YOLO-seg: contagens, resoluções, luz, tamanho das instâncias.
 
@@ -474,7 +464,7 @@ EXT = (".jpg", ".jpeg", ".png")
 
 def imagem_de(label: Path) -> Path | None:
     # nomes do Roboflow têm pontos ("x_jpg.rf.<hash>.txt"): concatenar, não usar with_suffix
-    base = str(label).replace("/labels/", "/images/")[: -len(label.suffix)]
+    base = str(label).replace("/labels_original/", "/images/").replace("/labels/", "/images/")[: -len(label.suffix)]
     for e in EXT:
         p = Path(base + e)
         if p.exists():
@@ -496,8 +486,10 @@ def main() -> None:
     saida.mkdir(parents=True, exist_ok=True)
 
     rows, amostras = [], []
+    # a EDA descreve o dataset como recebido: se as labels foram refinadas (SAM), usa o backup original
+    pasta = "labels_original" if (raiz / "train" / "labels_original").exists() else "labels"
     for split in ("train", "valid", "test"):
-        for lab in sorted((raiz / split / "labels").glob("*.txt")):
+        for lab in sorted((raiz / split / pasta).glob("*.txt")):
             img_p = imagem_de(lab)
             if img_p is None:
                 continue
@@ -522,6 +514,7 @@ def main() -> None:
     for s, r in resumo.iterrows():
         md.append(f"| {s} | {int(r.imagens)} | {int(r.instancias)} | {r.inst_por_img} | {int(r.sem_buraco)} | {r.lum_media} | {int(r.inst_pequenas)} |")
     md += ["", "Resoluções mais frequentes (w×h → imagens):", ""] + [f"- {w}×{h}: {n}" for (w, h), n in resol.items()]
+    md.append(f"\nLabels analisadas: `{pasta}/` (anotação original do dataset).")
     (saida / "eda_tabela.md").write_text("\n".join(md) + "\n")
     print("\n".join(md))
 
@@ -971,7 +964,7 @@ status "TREINOS CONCLUÍDOS: $(date '+%F %T')"
 log "===== pipeline terminado ====="
 ```
 
-### D. Avaliação
+### D. Avaliação e vídeo
 
 #### `scripts/avaliar.py` · 333 linhas
 ```python
@@ -1310,9 +1303,145 @@ if __name__ == "__main__":
     main()
 ```
 
+#### `scripts/video.py` · 132 linhas
+```python
+"""Inferência do segmentador no vídeo do cenário e rastreamento ByteTrack para contar buracos únicos.
+
+Gera video/seg/ (predição quadro a quadro, salvo pelo Ultralytics), video/cenario_track.mp4 (IDs do
+rastreador), figs/video_contagem.png, figs/video_quadros.png e figs/video_resumo.json.
+
+Uso:
+    python scripts/video.py --video video/cenario.mp4 --pesos runs/segment/seg_s/weights/best.pt --conf 0.25 --iou-nms 0.7
+"""
+import argparse
+import json
+import subprocess
+import time
+from collections import defaultdict
+from pathlib import Path
+
+import cv2
+import matplotlib
+import numpy as np
+
+matplotlib.use("Agg")
+import matplotlib.pyplot as plt
+from ultralytics import YOLO
+
+
+def iou_xyxy(a, b) -> float:
+    x1, y1 = max(a[0], b[0]), max(a[1], b[1])
+    x2, y2 = min(a[2], b[2]), min(a[3], b[3])
+    inter = max(0.0, x2 - x1) * max(0.0, y2 - y1)
+    ua = (a[2] - a[0]) * (a[3] - a[1]) + (b[2] - b[0]) * (b[3] - b[1]) - inter
+    return inter / ua if ua > 0 else 0.0
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--video", default="video/cenario.mp4")
+    ap.add_argument("--pesos", default="runs/segment/seg_s/weights/best.pt")
+    ap.add_argument("--conf", type=float, default=0.25)
+    ap.add_argument("--iou-nms", type=float, default=0.7)
+    ap.add_argument("--imgsz", type=int, default=640)
+    ap.add_argument("--saida", default="figs")
+    ap.add_argument("--sem-predict", action="store_true", help="pula o vídeo de predição sem rastreamento")
+    args = ap.parse_args()
+    saida = Path(args.saida); saida.mkdir(parents=True, exist_ok=True)
+    seg = YOLO(args.pesos)
+
+    if not args.sem_predict:
+        seg.predict(source=args.video, conf=args.conf, iou=args.iou_nms, imgsz=args.imgsz, save=True,
+                    project=str(Path("video").resolve()), name="seg", exist_ok=True, verbose=False)
+
+    cap = cv2.VideoCapture(args.video)
+    W, H, fps = int(cap.get(3)), int(cap.get(4)), cap.get(5)
+    bruto = "video/cenario_track_raw.mp4"
+    out = cv2.VideoWriter(bruto, cv2.VideoWriter_fourcc(*"mp4v"), fps, (W, H))
+    por_quadro, tempos, trilhas = [], [], defaultdict(list)   # trilhas[id] = [(quadro, caixa)]
+    quadros_guardados = {}
+    q = 0
+    while True:
+        ok, frame = cap.read()
+        if not ok:
+            break
+        t0 = time.perf_counter()
+        r = seg.track(frame, persist=True, tracker="bytetrack.yaml", conf=args.conf, iou=args.iou_nms,
+                      imgsz=args.imgsz, verbose=False)[0]
+        tempos.append((time.perf_counter() - t0) * 1000)
+        n = len(r.boxes)
+        if r.boxes.id is not None:
+            for i, cx in zip(r.boxes.id.int().tolist(), r.boxes.xyxy.tolist()):
+                trilhas[i].append((q, cx))
+        por_quadro.append(n)
+        anot = r.plot()
+        out.write(anot)
+        if q in (int(fps * 10), int(fps * 30), int(fps * 50), int(fps * 70)):
+            quadros_guardados[q] = anot
+        q += 1
+    cap.release(); out.release()
+    # recodifica em H.264 para reprodução em navegador; mantém o bruto se o ffmpeg faltar
+    final = "video/cenario_track.mp4"
+    try:
+        subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-i", bruto, "-c:v", "libx264", "-preset", "fast",
+                        "-crf", "23", "-pix_fmt", "yuv420p", final], check=True)
+        Path(bruto).unlink()
+    except Exception as e:  # noqa: BLE001
+        print("ffmpeg indisponível, mantendo mp4v:", e); Path(bruto).rename(final)
+
+    # métricas das trilhas
+    vidas = {i: (t[0][0], t[-1][0], len(t)) for i, t in trilhas.items()}
+    duracoes = np.array([v[2] for v in vidas.values()])
+    curtas = int((duracoes < 5).sum())
+    # candidatos a troca de ID: trilha nova nasce até 15 quadros depois do fim de outra, no mesmo lugar (IoU ≥ 0,3)
+    trocas = []
+    for i, (ini, fim, _) in vidas.items():
+        for j, (ini2, _, _) in vidas.items():
+            if j != i and 0 < ini2 - fim <= 15 and iou_xyxy(trilhas[i][-1][1], trilhas[j][0][1]) >= 0.3:
+                trocas.append((i, j, fim, ini2))
+    ids_estaveis = int((duracoes >= 5).sum())
+    resumo = dict(video=args.video, largura=W, altura=H, fps=round(fps, 2), quadros=q, duracao_s=round(q / fps, 1),
+                  conf=args.conf, iou_nms=args.iou_nms, deteccoes_somadas=int(sum(por_quadro)),
+                  quadros_com_deteccao=int(sum(n > 0 for n in por_quadro)), ids_unicos=len(vidas),
+                  ids_estaveis_5q=ids_estaveis, trilhas_curtas_lt5q=curtas, trocas_id_candidatas=len(trocas),
+                  trocas=[dict(de=a, para=b, quadro_fim=c, quadro_ini=d, t_s=round(d / fps, 1)) for a, b, c, d in trocas],
+                  vida_mediana_quadros=float(np.median(duracoes)) if len(duracoes) else 0.0,
+                  vida_max_quadros=int(duracoes.max()) if len(duracoes) else 0,
+                  ms_por_quadro=round(float(np.mean(tempos)), 1), fps_inferencia=round(1000 / float(np.mean(tempos)), 1))
+    (saida / "video_resumo.json").write_text(json.dumps(resumo, indent=2, ensure_ascii=False))
+    print(json.dumps({k: v for k, v in resumo.items() if k != "trocas"}, indent=2, ensure_ascii=False))
+
+    # figura: detecções por quadro × IDs únicos acumulados
+    t = np.arange(q) / fps
+    acum = np.zeros(q, int)
+    for ini, _, _ in vidas.values():
+        acum[ini:] += 1
+    fig, ax = plt.subplots(figsize=(10, 3.2))
+    ax.plot(t, por_quadro, color="#999", lw=0.8, label="detecções no quadro")
+    ax.set_xlabel("tempo (s)"); ax.set_ylabel("detecções por quadro", color="#666")
+    ax2 = ax.twinx(); ax2.plot(t, acum, color="#c00", lw=1.8, label="buracos únicos (IDs) acumulados")
+    ax2.set_ylabel("IDs acumulados", color="#c00")
+    for a, b, c, d in trocas:
+        ax2.axvline(d / fps, color="#c00", ls=":", lw=0.8, alpha=0.6)
+    ax.set_title(f"soma das detecções = {resumo['deteccoes_somadas']} · IDs únicos = {len(vidas)} · trocas de ID candidatas (pontilhado) = {len(trocas)}", fontsize=10)
+    fig.tight_layout(); fig.savefig(saida / "video_contagem.png", dpi=150); plt.close(fig)
+
+    # figura: quadros anotados
+    if quadros_guardados:
+        fig, axs = plt.subplots(1, len(quadros_guardados), figsize=(4.2 * len(quadros_guardados), 2.6))
+        for a_, (qi, im) in zip(np.atleast_1d(axs), sorted(quadros_guardados.items())):
+            a_.imshow(cv2.cvtColor(im, cv2.COLOR_BGR2RGB)); a_.set_title(f"t = {qi / fps:.0f} s", fontsize=9); a_.axis("off")
+        fig.tight_layout(); fig.savefig(saida / "video_quadros.png", dpi=130); plt.close(fig)
+    print(f"vídeos: video/seg/ e {final} · figuras em {saida}/")
+
+
+if __name__ == "__main__":
+    main()
+```
+
 ### E. Relatório e ambiente
 
-#### `tools/build_report.py` · 153 linhas
+#### `tools/build_report.py` · 158 linhas
 ```python
 """Monta o relatório: Markdown → HTML → PDF, com o apêndice de código gerado do repositório.
 
@@ -1353,15 +1482,15 @@ ARQUIVOS_APENDICE = [
     ("A. Dados", ["data.yaml", "scripts/baixar_dataset.py", "scripts/filtrar_classes.py", "scripts/eda.py"]),
     ("B. Refino das máscaras com SAM", ["scripts/refinar_mascaras_sam.py"]),
     ("C. Treino", ["scripts/treinar.py", "scripts/pipeline.sh"]),
-    ("D. Avaliação", ["scripts/avaliar.py"]),
+    ("D. Avaliação e vídeo", ["scripts/avaliar.py", "scripts/video.py"]),
     ("E. Relatório e ambiente", ["tools/build_report.py", "scripts/gerar_notebook.py", "requirements.txt", "requirements-report.txt"]),
 ]
 LINGUAGEM = {".py": "python", ".sh": "bash", ".yaml": "yaml", ".yml": "yaml", ".txt": "text", ".md": "markdown"}
 
 ESTILO = """
-@page { size: A4; margin: 14mm 15mm 15mm; }
+@page { size: A4; margin: 12mm 14mm 13mm; }
 * { box-sizing: border-box; }
-body { font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; font-size: 9.5pt; line-height: 1.38;
+body { font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; font-size: 9.3pt; line-height: 1.34;
        color: #16202B; background: #FFF; margin: 0; padding: 0; }
 h1 { font-size: 22pt; line-height: 1.2; margin: 0 0 4pt; letter-spacing: -.01em; }
 h2 { font-size: 12.5pt; margin: 11pt 0 5pt; padding-bottom: 4pt; border-bottom: .8pt solid #C9D2DB; page-break-after: avoid; }
@@ -1375,9 +1504,11 @@ strong { font-weight: 600; }
 hr { border: none; border-top: .8pt solid #C9D2DB; margin: 9pt 0; }
 blockquote { margin: 9pt 0; padding: 7pt 12pt; border-left: 2.5pt solid #4A6E8A; background: #F2F5F8; font-size: 9.8pt; }
 blockquote p:last-child { margin-bottom: 0; }
-table { border-collapse: collapse; width: 100%; margin: 6pt 0 9pt; font-size: 8.8pt; page-break-inside: auto; }
-th, td { border: .6pt solid #C9D2DB; padding: 4pt 7pt; text-align: left; vertical-align: top; }
+table { border-collapse: collapse; width: 100%; margin: 5pt 0 8pt; font-size: 8.6pt; page-break-inside: auto; }
+th, td { border: .6pt solid #C9D2DB; padding: 3pt 7pt; text-align: left; vertical-align: top; }
 th { background: #EEF2F6; font-weight: 600; }
+tr { page-break-inside: avoid; }
+thead { display: table-header-group; }
 td:nth-child(n+2) { font-variant-numeric: tabular-nums; }
 code { font-family: "IBM Plex Mono", "DejaVu Sans Mono", monospace; font-size: .87em; background: #F0F3F6; padding: .5pt 3pt; border-radius: 2pt; }
 pre { background: #F7F9FB; border: .6pt solid #D8E0E8; border-radius: 3pt; padding: 5pt 8pt; overflow-x: auto;
@@ -1387,7 +1518,10 @@ img { max-width: 70%; height: auto; display: block; margin: 5pt auto; page-break
 p img[alt="CEUB"] { max-width: 30%; }
 p img[alt^="Matriz de confusão"] { max-width: 40%; }
 p img[alt^="Precisão × revocação"], p img[alt^="Razão entre"] { max-width: 48%; }
-p img[alt^="Controle de qualidade"], p img[alt^="Caixas do detector"], p img[alt^="Falsos"] { max-width: 84%; }
+p img[alt^="Controle de qualidade"], p img[alt^="Falsos"] { max-width: 78%; }
+p img[alt^="Caixas do detector"] { max-width: 66%; }
+p img[alt^="Detecções por quadro"] { max-width: 66%; }
+p img[alt^="Quadros do vídeo"] { max-width: 90%; }
 h1 + h3 + table { margin-bottom: 12pt; }
 h2#apêndice--código-fonte { page-break-before: always; }
 """
@@ -1469,7 +1603,7 @@ if __name__ == "__main__":
     sys.exit(main())
 ```
 
-#### `scripts/gerar_notebook.py` · 237 linhas
+#### `scripts/gerar_notebook.py` · 226 linhas
 ```python
 """Gera notebooks/sistematizacao.ipynb — notebook executável que reproduz os resultados do relatório.
 
@@ -1640,6 +1774,7 @@ extras = [p for p in ("runs/detect/baseline_n", "runs/detect/det_s800", "runs/de
 code("""
 #@title 4.2 Tabela final (val e teste)
 import pandas as pd
+pd.set_option("display.width", 200); pd.set_option("display.max_columns", 20)
 tab = pd.read_csv("figs/tabela_final.csv")
 R = json.load(open("figs/resultados.json"))
 print(f"ponto de operação: conf = {R['conf']:.2f} ({R['varredura']['regra']}) · IoU NMS = {R['iou_nms']}")
@@ -1665,33 +1800,21 @@ if "iou_dice_test_labels_original" in R: print("IoU/Dice no teste vs anotações
 md("""
 ## 5. Vídeo
 
-Inferência do segmentador (caixas + máscaras) no vídeo real do cenário, com o mesmo ponto de operação, e rastreamento ByteTrack para contar buracos únicos. Coloque o vídeo em `video/cenario.mp4` (no Colab a célula pede o upload).
+Inferência do segmentador (caixas + máscaras) no vídeo real do cenário, com o mesmo ponto de operação, e rastreamento ByteTrack para contar buracos únicos. O vídeo desta entrega é um trecho de 90,7 s de uma rodovia da Paraíba (YouTube, ID `I0HsZ2rsW8M`), salvo em `video/cenario.mp4` (no Colab a célula pede o upload). A célula chama `scripts/video.py`, que também gera as figuras da seção 9 do relatório.
 """),
 code("""
 #@title 5.1 Inferência e rastreamento (ByteTrack)
-import cv2, time
-from ultralytics import YOLO
 os.makedirs("video", exist_ok=True); VIDEO = "video/cenario.mp4"
 if not Path(VIDEO).exists() and IN_COLAB:
     from google.colab import files
     up = files.upload(); os.rename(list(up)[0], VIDEO)
 if Path(VIDEO).exists():
-    CONF, IOU_NMS = R["conf"], R["iou_nms"]
-    seg = YOLO("runs/segment/seg_s/weights/best.pt")
-    seg.predict(source=VIDEO, conf=CONF, iou=IOU_NMS, imgsz=640, save=True, project="video", name="seg", exist_ok=True, verbose=False)
-    ids, n_det, tempos = set(), 0, []
-    cap = cv2.VideoCapture(VIDEO); W, H, fps = int(cap.get(3)), int(cap.get(4)), cap.get(5)
-    out = cv2.VideoWriter("video/cenario_track.mp4", cv2.VideoWriter_fourcc(*"mp4v"), fps, (W, H))
-    while True:
-        ok, q = cap.read()
-        if not ok: break
-        t0 = time.perf_counter()
-        r = seg.track(q, persist=True, tracker="bytetrack.yaml", conf=CONF, iou=IOU_NMS, imgsz=640, verbose=False)[0]
-        tempos.append((time.perf_counter() - t0) * 1000)
-        if r.boxes.id is not None: ids.update(r.boxes.id.int().tolist()); n_det += len(r.boxes)
-        out.write(r.plot())
-    cap.release(); out.release()
-    print(f"{W}x{H} @ {fps:.0f} FPS · buracos únicos (IDs) = {len(ids)} · detecções somadas por quadro = {n_det} · {np.mean(tempos):.1f} ms/quadro ({1000/np.mean(tempos):.1f} FPS)")
+    # segmentador no ponto de operação do teste + ByteTrack; grava video/cenario_seg.mp4 (via video/seg/) e video/cenario_track.mp4
+    %run scripts/video.py --video {VIDEO} --pesos runs/segment/seg_s/weights/best.pt --conf {R["conf"]} --iou-nms {R["iou_nms"]}
+    V = json.load(open("figs/video_resumo.json"))
+    print(f"\\n{V['largura']}x{V['altura']} @ {V['fps']} FPS · {V['duracao_s']} s · detecções somadas = {V['deteccoes_somadas']} · buracos únicos (IDs) = {V['ids_unicos']} "
+          f"(trilhas ≥ 5 quadros: {V['ids_estaveis_5q']}) · trocas de ID candidatas = {V['trocas_id_candidatas']} · {V['ms_por_quadro']} ms/quadro ({V['fps_inferencia']} FPS)")
+    display(Image("figs/video_contagem.png", width=900)); display(Image("figs/video_quadros.png", width=1000))
 else:
     print("vídeo ausente: grave um vídeo (≥ 30 s) do cenário e salve em video/cenario.mp4")
 """),
@@ -1701,7 +1824,7 @@ md("""
 """),
 ]
 
-nb = {"cells": [{**c, "source": c["source"].replace("REPO_URL", REPO)} for c in cells],
+nb = {"cells": [{**c, "id": f"c{i:02d}", "source": c["source"].replace("REPO_URL", REPO)} for i, c in enumerate(cells)],
       "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"},
                    "language_info": {"name": "python"}, "colab": {"provenance": [], "gpuType": "A100"}, "accelerator": "GPU"},
       "nbformat": 4, "nbformat_minor": 5}
@@ -1710,11 +1833,12 @@ SAIDA.write_text(json.dumps(nb, indent=1, ensure_ascii=False))
 print(f"notebook gerado: {SAIDA} ({len(cells)} células)")
 ```
 
-#### `requirements.txt` · 11 linhas
+#### `requirements.txt` · 12 linhas
 ```text
 ultralytics>=8.3
 roboflow
 supervision
+lap                # rastreador ByteTrack (ultralytics.track)
 opencv-python
 numpy
 pandas

@@ -37,15 +37,15 @@ ARQUIVOS_APENDICE = [
     ("A. Dados", ["data.yaml", "scripts/baixar_dataset.py", "scripts/filtrar_classes.py", "scripts/eda.py"]),
     ("B. Refino das máscaras com SAM", ["scripts/refinar_mascaras_sam.py"]),
     ("C. Treino", ["scripts/treinar.py", "scripts/pipeline.sh"]),
-    ("D. Avaliação", ["scripts/avaliar.py"]),
+    ("D. Avaliação e vídeo", ["scripts/avaliar.py", "scripts/video.py"]),
     ("E. Relatório e ambiente", ["tools/build_report.py", "scripts/gerar_notebook.py", "requirements.txt", "requirements-report.txt"]),
 ]
 LINGUAGEM = {".py": "python", ".sh": "bash", ".yaml": "yaml", ".yml": "yaml", ".txt": "text", ".md": "markdown"}
 
 ESTILO = """
-@page { size: A4; margin: 14mm 15mm 15mm; }
+@page { size: A4; margin: 12mm 14mm 13mm; }
 * { box-sizing: border-box; }
-body { font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; font-size: 9.5pt; line-height: 1.38;
+body { font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; font-size: 9.3pt; line-height: 1.34;
        color: #16202B; background: #FFF; margin: 0; padding: 0; }
 h1 { font-size: 22pt; line-height: 1.2; margin: 0 0 4pt; letter-spacing: -.01em; }
 h2 { font-size: 12.5pt; margin: 11pt 0 5pt; padding-bottom: 4pt; border-bottom: .8pt solid #C9D2DB; page-break-after: avoid; }
@@ -59,9 +59,11 @@ strong { font-weight: 600; }
 hr { border: none; border-top: .8pt solid #C9D2DB; margin: 9pt 0; }
 blockquote { margin: 9pt 0; padding: 7pt 12pt; border-left: 2.5pt solid #4A6E8A; background: #F2F5F8; font-size: 9.8pt; }
 blockquote p:last-child { margin-bottom: 0; }
-table { border-collapse: collapse; width: 100%; margin: 6pt 0 9pt; font-size: 8.8pt; page-break-inside: auto; }
-th, td { border: .6pt solid #C9D2DB; padding: 4pt 7pt; text-align: left; vertical-align: top; }
+table { border-collapse: collapse; width: 100%; margin: 5pt 0 8pt; font-size: 8.6pt; page-break-inside: auto; }
+th, td { border: .6pt solid #C9D2DB; padding: 3pt 7pt; text-align: left; vertical-align: top; }
 th { background: #EEF2F6; font-weight: 600; }
+tr { page-break-inside: avoid; }
+thead { display: table-header-group; }
 td:nth-child(n+2) { font-variant-numeric: tabular-nums; }
 code { font-family: "IBM Plex Mono", "DejaVu Sans Mono", monospace; font-size: .87em; background: #F0F3F6; padding: .5pt 3pt; border-radius: 2pt; }
 pre { background: #F7F9FB; border: .6pt solid #D8E0E8; border-radius: 3pt; padding: 5pt 8pt; overflow-x: auto;
@@ -71,7 +73,10 @@ img { max-width: 70%; height: auto; display: block; margin: 5pt auto; page-break
 p img[alt="CEUB"] { max-width: 30%; }
 p img[alt^="Matriz de confusão"] { max-width: 40%; }
 p img[alt^="Precisão × revocação"], p img[alt^="Razão entre"] { max-width: 48%; }
-p img[alt^="Controle de qualidade"], p img[alt^="Caixas do detector"], p img[alt^="Falsos"] { max-width: 84%; }
+p img[alt^="Controle de qualidade"], p img[alt^="Falsos"] { max-width: 78%; }
+p img[alt^="Caixas do detector"] { max-width: 66%; }
+p img[alt^="Detecções por quadro"] { max-width: 66%; }
+p img[alt^="Quadros do vídeo"] { max-width: 90%; }
 h1 + h3 + table { margin-bottom: 12pt; }
 h2#apêndice--código-fonte { page-break-before: always; }
 """

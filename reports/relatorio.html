@@ -1,7 +1,7 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Detecção e segmentação de buracos em vias urbanas com YOLO11</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap"><style>
-@page { size: A4; margin: 14mm 15mm 15mm; }
+@page { size: A4; margin: 12mm 14mm 13mm; }
 * { box-sizing: border-box; }
-body { font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; font-size: 9.5pt; line-height: 1.38;
+body { font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif; font-size: 9.3pt; line-height: 1.34;
        color: #16202B; background: #FFF; margin: 0; padding: 0; }
 h1 { font-size: 22pt; line-height: 1.2; margin: 0 0 4pt; letter-spacing: -.01em; }
 h2 { font-size: 12.5pt; margin: 11pt 0 5pt; padding-bottom: 4pt; border-bottom: .8pt solid #C9D2DB; page-break-after: avoid; }
@@ -15,9 +15,11 @@ strong { font-weight: 600; }
 hr { border: none; border-top: .8pt solid #C9D2DB; margin: 9pt 0; }
 blockquote { margin: 9pt 0; padding: 7pt 12pt; border-left: 2.5pt solid #4A6E8A; background: #F2F5F8; font-size: 9.8pt; }
 blockquote p:last-child { margin-bottom: 0; }
-table { border-collapse: collapse; width: 100%; margin: 6pt 0 9pt; font-size: 8.8pt; page-break-inside: auto; }
-th, td { border: .6pt solid #C9D2DB; padding: 4pt 7pt; text-align: left; vertical-align: top; }
+table { border-collapse: collapse; width: 100%; margin: 5pt 0 8pt; font-size: 8.6pt; page-break-inside: auto; }
+th, td { border: .6pt solid #C9D2DB; padding: 3pt 7pt; text-align: left; vertical-align: top; }
 th { background: #EEF2F6; font-weight: 600; }
+tr { page-break-inside: avoid; }
+thead { display: table-header-group; }
 td:nth-child(n+2) { font-variant-numeric: tabular-nums; }
 code { font-family: "IBM Plex Mono", "DejaVu Sans Mono", monospace; font-size: .87em; background: #F0F3F6; padding: .5pt 3pt; border-radius: 2pt; }
 pre { background: #F7F9FB; border: .6pt solid #D8E0E8; border-radius: 3pt; padding: 5pt 8pt; overflow-x: auto;
@@ -27,7 +29,10 @@ img { max-width: 70%; height: auto; display: block; margin: 5pt auto; page-break
 p img[alt="CEUB"] { max-width: 30%; }
 p img[alt^="Matriz de confusão"] { max-width: 40%; }
 p img[alt^="Precisão × revocação"], p img[alt^="Razão entre"] { max-width: 48%; }
-p img[alt^="Controle de qualidade"], p img[alt^="Caixas do detector"], p img[alt^="Falsos"] { max-width: 84%; }
+p img[alt^="Controle de qualidade"], p img[alt^="Falsos"] { max-width: 78%; }
+p img[alt^="Caixas do detector"] { max-width: 66%; }
+p img[alt^="Detecções por quadro"] { max-width: 66%; }
+p img[alt^="Quadros do vídeo"] { max-width: 90%; }
 h1 + h3 + table { margin-bottom: 12pt; }
 h2#apêndice--código-fonte { page-break-before: always; }
 </style></head><body><p><img alt="CEUB" src="figures/ceub-logo.png" /></p>
@@ -66,8 +71,8 @@ h2#apêndice--código-fonte { page-break-before: always; }
 <td>Release <code>v1.0</code> — <code>det_s_best.pt</code>, <code>seg_s_best.pt</code>, <code>baseline_n_best.pt</code></td>
 </tr>
 <tr>
-<td><strong>Vídeo com inferência</strong></td>
-<td><!-- link (domingo) --></td>
+<td><strong>Vídeos</strong></td>
+<td>máscaras: <code>cenario_seg.mp4</code> · rastreamento: <code>cenario_track.mp4</code> — <!-- link do Drive --></td>
 </tr>
 <tr>
 <td><strong>Vídeo-pitch</strong></td>
@@ -513,25 +518,45 @@ h2#apêndice--código-fonte { page-break-before: always; }
 <hr />
 <h2 id="8-politica-de-decisao">8. Política de decisão</h2>
 <p>O limiar de confiança é um ponto de operação, e a tabela da seção 4.3 é a análise de sensibilidade: entre <code>conf = 0,20</code> e <code>conf = 0,35</code> a precisão vai de 0,57 a 0,71 enquanto a revocação cai de 0,52 para 0,41. Para o produto descrito na seção 2 — uma lista de manutenção revisada por um operador antes da ordem de serviço — um falso positivo custa segundos de revisão; um falso negativo é um buraco que não entra na lista. Isso justifica operar em <code>conf = 0,25</code> ou abaixo, e não no limiar de precisão 0,70 que a regra inicial sugeria.</p>
-<p>Duas observações operacionais. Primeiro, como o vídeo passa pelo mesmo buraco em dezenas de quadros, a revocação efetiva por buraco é maior que a revocação por quadro medida no teste: basta detectá-lo em um quadro para que o rastreador o mantenha (seção 9). Segundo, como os falsos positivos mais confiantes são buracos reais não anotados, a fila de revisão do operador recebe menos alarmes falsos do que a precisão de 0,645 sugere.</p>
+<p>Duas observações operacionais. Primeiro, como o vídeo passa pelo mesmo buraco em dezenas de quadros, a revocação efetiva por buraco é maior que a revocação por quadro medida no teste: basta detectá-lo em alguns quadros para que ele entre na contagem por identidade — ainda que, como a seção 9 mostra, a detecção intermitente fragmente as trilhas. Segundo, como os falsos positivos mais confiantes são buracos reais não anotados, a fila de revisão do operador recebe menos alarmes falsos do que a precisão de 0,645 sugere.</p>
 <hr />
 <h2 id="9-aplicacao-em-video">9. Aplicação em vídeo</h2>
-<!-- PREENCHER NO DOMINGO após gravar o vídeo (≥ 30 s) e executar a célula 7 do notebook ou os comandos abaixo:
-     - link do vídeo com inferência (máscaras) e do vídeo com rastreamento (IDs ByteTrack)
-     - duração, resolução, FPS do vídeo
-     - detecções somadas por quadro × buracos únicos (IDs) — o argumento "não contar duas vezes"
-     - trocas de ID observadas (2–3 casos) e onde ocorreram (curvas, freadas)
-     - latência média ms/quadro na GPU usada e FPS de inferência
-     - observações de generalização: vias brasileiras vs. dataset estrangeiro (asfalto, sombras, faixas)
--->
-
-<p>A inferência no vídeo usa o segmentador (caixas + máscaras) com <code>conf = 0,25</code> e <code>IoU NMS = 0,7</code>, e o rastreador <strong>ByteTrack</strong> integrado ao Ultralytics (<code>model.track(..., tracker="bytetrack.yaml", persist=True)</code>), que associa detecções de baixa confiança num segundo estágio — útil quando o buraco entra e sai de oclusão parcial. Buracos são estáticos no mundo; o movimento é da câmera. O filtro de Kalman de velocidade constante do ByteTrack funciona bem em velocidade estável e tende a trocar identidades em freadas e curvas fechadas; a contagem por identidade única é o que evita contar o mesmo buraco a cada quadro.</p>
-<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code><span style="color: #007020; font-weight: bold">from</span> <span style="color: #0e84b5; font-weight: bold">ultralytics</span> <span style="color: #007020; font-weight: bold">import</span> YOLO
-seg <span style="color: #666666">=</span> YOLO(<span style="color: #4070a0">&quot;runs/segment/seg_s/weights/best.pt&quot;</span>)
-seg<span style="color: #666666">.</span>predict(<span style="color: #4070a0">&quot;video/cenario.mp4&quot;</span>, conf<span style="color: #666666">=</span><span style="color: #40a070">0.25</span>, iou<span style="color: #666666">=</span><span style="color: #40a070">0.7</span>, imgsz<span style="color: #666666">=</span><span style="color: #40a070">640</span>, save<span style="color: #666666">=</span><span style="color: #007020; font-weight: bold">True</span>, project<span style="color: #666666">=</span><span style="color: #4070a0">&quot;video&quot;</span>, name<span style="color: #666666">=</span><span style="color: #4070a0">&quot;seg&quot;</span>)
-seg<span style="color: #666666">.</span>track(<span style="color: #4070a0">&quot;video/cenario.mp4&quot;</span>, tracker<span style="color: #666666">=</span><span style="color: #4070a0">&quot;bytetrack.yaml&quot;</span>, persist<span style="color: #666666">=</span><span style="color: #007020; font-weight: bold">True</span>, conf<span style="color: #666666">=</span><span style="color: #40a070">0.25</span>, iou<span style="color: #666666">=</span><span style="color: #40a070">0.7</span>, save<span style="color: #666666">=</span><span style="color: #007020; font-weight: bold">True</span>)
-</code></pre></div>
-
+<p>O vídeo de demonstração é um trecho de <strong>90,7 s</strong> (1280×720, 29,97 quadros/s, 2 719 quadros) de um registro público feito de dentro de um veículo numa rodovia da Paraíba (YouTube, <em>Estrada esburacada na Paraíba</em>, ID <code>I0HsZ2rsW8M</code>) — deliberadamente um teste de <strong>generalização de domínio</strong>: asfalto degradado com trechos de terra, luz forte e câmera trepidante, contra um dataset de treino estrangeiro. A inferência usa o segmentador no ponto de operação do teste (<code>conf = 0,25</code>, <code>IoU NMS = 0,7</code>, 640 px) e o rastreador <strong>ByteTrack</strong> do Ultralytics, que associa detecções de baixa confiança num segundo estágio. Buracos são estáticos; o movimento é da câmera, e o filtro de Kalman precisa acompanhar um alvo que cresce e desce na imagem conforme o carro se aproxima. Tudo está em <code>scripts/video.py</code> (célula 5.1 do notebook); os vídeos com máscaras e com IDs estão nos links da capa.</p>
+<table>
+<thead>
+<tr>
+<th>Medida</th>
+<th>Valor</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Detecções somadas quadro a quadro</td>
+<td>3 617 (2 155 quadros com ≥ 1 detecção, 79%)</td>
+</tr>
+<tr>
+<td>Buracos únicos (IDs do ByteTrack) · trilhas ≥ 5 / &lt; 5 quadros</td>
+<td><strong>227</strong> · 107 / 120</td>
+</tr>
+<tr>
+<td>Vida mediana / máxima de uma trilha</td>
+<td>4 quadros / 137 quadros (4,6 s)</td>
+</tr>
+<tr>
+<td>Trocas de ID candidatas</td>
+<td>22, das quais 10 entre 14,7 s e 16,1 s</td>
+</tr>
+<tr>
+<td>Latência média (GTX 1060, inferência + rastreador)</td>
+<td>18–21 ms/quadro (≈ 50 FPS)</td>
+</tr>
+</tbody>
+</table>
+<p><img alt="Detecções por quadro e buracos únicos acumulados no vídeo" src="figures/11_video_contagem.png" /></p>
+<p><strong>Não contar duas vezes.</strong> Somar detecções por quadro daria 3 617 "buracos"; contar identidades dá 227, dezesseis vezes menos, e é essa a contagem que serve a uma lista de manutenção. Mas o número ainda é um limite superior: metade das trilhas dura menos de 5 quadros. A detecção é intermitente (revocação de 0,52 por quadro), e quando o buraco reaparece numa posição que o Kalman não previu — o alvo muda de escala depressa ao se aproximar — o rastreador abre uma trilha nova em vez de recuperar a antiga. Uma contagem conservadora, só de trilhas com pelo menos 5 quadros, dá 107. O número verdadeiro é desconhecido: o vídeo não está anotado.</p>
+<p><strong>Trocas de ID.</strong> Foram sinalizadas as trilhas que nascem até 15 quadros depois de outra terminar no mesmo lugar (IoU ≥ 0,3). Das 22, dez ocorrem entre 14,7 s e 16,1 s, o trecho mais danificado, com até 10 detecções por quadro: buracos vizinhos disputam as mesmas associações e a trepidação desloca todas as caixas de uma vez. As demais se espalham por trechos de um ou dois buracos por quadro e são fragmentação, não confusão entre alvos.</p>
+<p><img alt="Quadros do vídeo com rastreamento" src="figures/12_video_quadros.png" /></p>
+<p><strong>Generalização.</strong> O modelo detecta os buracos nítidos, com confianças entre 0,3 e 0,55, e ignora a maior parte do desgaste extenso e do piso de terra — o comportamento da seção 7.2, agora noutro domínio. Não há falsos positivos sobre veículos, vegetação ou sombras nos quadros inspecionados, e ~20 ms/quadro cabem no orçamento de 33 ms a 30 FPS.</p>
 <hr />
 <h2 id="10-conclusao">10. Conclusão</h2>
 <p>O sistema entrega detecção e segmentação de buracos com <strong>mAP@0,5 de 0,487</strong> e <strong>mAP@0,5:0,95 de 0,287</strong> no teste para a detecção, <strong>mask mAP@0,5 de 0,319</strong> para a segmentação, e precisão 0,645 / revocação 0,518 no ponto de operação escolhido em validação. A máscara acrescenta à caixa exatamente o que o problema pede: a área real do dano, que a caixa superestima em 44% no caso típico.</p>
@@ -543,14 +568,7 @@ seg<span style="color: #666666">.</span>track(<span style="color: #4070a0">&quot
 <p><strong>O tamanho da instância não explica os falsos negativos.</strong> A revocação é praticamente igual em instâncias pequenas, médias e grandes — as grandes perdidas são áreas de desgaste anotadas de forma generosa, não buracos nítidos. A fronteira semântica do rótulo é o problema.</p>
 <p><strong>O teste foi tocado três vezes, não uma.</strong> Duas execuções anteriores à avaliação final foram descartadas por erro de configuração (limiar errado; casamento não um-para-um). Nenhum parâmetro foi alterado a partir delas, mas a rigor o protocolo de teste único não foi cumprido à letra, e preferimos registrar isso a omiti-lo.</p>
 <h3 id="trabalhos-futuros">Trabalhos futuros</h3>
-<p>Re-anotar o conjunto de teste, ou ao menos os falsos positivos de alta confiança, para medir o sistema com um gabarito justo. Treinar em 800 px como configuração principal. Coletar e anotar imagens de vias brasileiras — o vídeo desta entrega é o primeiro teste de generalização de domínio. Reduzir o IoU do NMS para 0,5 e medir o efeito nas caixas aninhadas. Para operar: exportar para ONNX/TensorRT com a perda de acurácia medida por estágio de quantização (na GTX 1060 o YOLO11s infere em ~12 ms por imagem, mas o orçamento de 33 ms a 30 FPS inclui decodificação e rastreamento — detectar a cada N quadros e rastrear nos intermediários é o padrão para caber na borda); monitorar a distribuição dos scores e a taxa de detecções por trecho para flagrar o drift de um modelo treinado em vias estrangeiras; e processar na borda armazenando apenas metadados, porque o vídeo captura placas e pessoas.</p>
+<p>Re-anotar o conjunto de teste, ou ao menos os falsos positivos de alta confiança, para medir o sistema com um gabarito justo. Treinar em 800 px como configuração principal. Coletar e anotar imagens de vias brasileiras — o vídeo da seção 9 mostra que o modelo transfere para os buracos nítidos, mas não para o desgaste extenso. Ajustar o rastreador ao caso (buraco estático, câmera em movimento): buffer de trilha maior e associação por posição no chão em vez de na imagem, para reduzir a fragmentação medida. Para operar: exportar para ONNX/TensorRT medindo a perda por estágio de quantização; monitorar a distribuição dos scores e a taxa de detecções por trecho para flagrar o drift; e processar na borda armazenando apenas metadados, porque o vídeo captura placas e pessoas.</p>
 <hr />
 <p><strong>Declaração de uso de IA.</strong> Ferramentas de IA generativa foram utilizadas exclusivamente como suporte na organização do cronograma, na estruturação inicial dos scripts e na revisão linguística do texto. Toda a execução, verificação e adaptação do código foram realizadas pelo autor. Os resultados obtidos, as figuras geradas e as análises textuais são de inteira responsabilidade e autoria do autor.</p>
-<p><strong>Referências.</strong> Dataset: <em>Potholes and Roads Instance Segmentation</em>, pothole-vsmtu, Roboflow Universe, v5, CC BY 4.0 · Jocher, G. et al. <em>Ultralytics YOLO11</em>, 2024 · Redmon, J. et al. <em>You Only Look Once</em>, CVPR 2016 · Kirillov, A. et al. <em>Segment Anything</em>, ICCV 2023 · Zhang, Y. et al. <em>ByteTrack</em>, ECCV 2022 · Kalman, R. E., 1960 · Heriberto, R. <em>Apostilas de Visão Computacional</em> (Vols. I e II), <em>Vídeo com Visão Computacional</em> e <em>Reconhecimento de Padrões</em>, CEUB, 2026.</p>
-<p><strong>Reprodução:</strong></p>
-<div class="codehilite" style="background: #f0f0f0"><pre style="line-height: 125%;"><span></span><code>git<span style="color: #bbbbbb"> </span>clone<span style="color: #bbbbbb"> </span>https://github.com/diegoedataengineer/sistematizacao-visao-computacional
-<span style="color: #007020">cd</span><span style="color: #bbbbbb"> </span>sistematizacao-visao-computacional<span style="color: #bbbbbb"> </span><span style="color: #666666">&amp;&amp;</span><span style="color: #bbbbbb"> </span>pip<span style="color: #bbbbbb"> </span>install<span style="color: #bbbbbb"> </span>-r<span style="color: #bbbbbb"> </span>requirements.txt
-gh<span style="color: #bbbbbb"> </span>release<span style="color: #bbbbbb"> </span>download<span style="color: #bbbbbb"> </span>v1.0<span style="color: #bbbbbb"> </span>-p<span style="color: #bbbbbb"> </span><span style="color: #4070a0">&quot;*.pt&quot;</span><span style="color: #bbbbbb">                 </span><span style="color: #60a0b0; font-style: italic"># pesos treinados</span>
-python<span style="color: #bbbbbb"> </span>scripts/avaliar.py<span style="color: #bbbbbb"> </span>--det<span style="color: #bbbbbb"> </span>runs/detect/det_s<span style="color: #bbbbbb"> </span>--seg<span style="color: #bbbbbb"> </span>runs/segment/seg_s<span style="color: #bbbbbb"> </span>--regra<span style="color: #bbbbbb"> </span>f1
-python<span style="color: #bbbbbb"> </span>tools/build_report.py<span style="color: #bbbbbb">                        </span><span style="color: #60a0b0; font-style: italic"># este relatório em HTML e PDF</span>
-</code></pre></div></body></html>
+<p><strong>Referências.</strong> Dataset: <em>Potholes and Roads Instance Segmentation</em>, pothole-vsmtu, Roboflow Universe, v5, CC BY 4.0 · Jocher, G. et al. <em>Ultralytics YOLO11</em>, 2024 · Redmon, J. et al. <em>You Only Look Once</em>, CVPR 2016 · Kirillov, A. et al. <em>Segment Anything</em>, ICCV 2023 · Zhang, Y. et al. <em>ByteTrack</em>, ECCV 2022 · Vídeo: <em>Estrada esburacada na Paraíba</em>, YouTube, ID I0HsZ2rsW8M · Heriberto, R. <em>Apostilas da disciplina</em>, CEUB, 2026.</p></body></html>

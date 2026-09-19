@@ -25,7 +25,15 @@ Priorizar a manutenção viária a partir de imagens capturadas por veículos em
 
 `conf = 0,25` · `IoU NMS = 0,7` · avaliação única no teste. Relatório completo em [reports/relatorio.md](reports/relatorio.md) e em [PDF](reports/relatorio.pdf).
 
-Vídeo com inferência: <!-- link --> · Vídeo com rastreamento (ByteTrack): <!-- link -->
+## Vídeo
+
+Trecho de 90,7 s de uma rodovia da Paraíba (YouTube, ID `I0HsZ2rsW8M`, 1280×720 a 30 FPS), usado como teste de generalização de domínio. `scripts/video.py` roda o segmentador no ponto de operação do teste e o ByteTrack para contar buracos únicos:
+
+| Detecções somadas por quadro | Buracos únicos (IDs) | Trilhas ≥ 5 quadros | Trocas de ID candidatas | Latência (GTX 1060) |
+|---|---|---|---|---|
+| 3 617 | 227 | 107 | 22 | 18–21 ms/quadro (≈ 50 FPS) |
+
+Vídeo com máscaras (`cenario_seg.mp4`): <!-- link --> · Vídeo com rastreamento (`cenario_track.mp4`): <!-- link --> · Vídeo-pitch: <!-- link -->
 
 ## Dataset
 
@@ -49,8 +57,13 @@ Detalhes da análise exploratória em `figs/eda.png` e na seção 3 do relatóri
 │   ├── baixar_dataset.py  download via Roboflow (chave por variável de ambiente)
 │   ├── filtrar_classes.py remapeia/filtra labels para classe única
 │   ├── eda.py             figuras e tabela da análise exploratória
-│   └── treinar.py         treino de detecção ou segmentação (Ultralytics)
-├── notebooks/             notebook Colab executável (Fase 5)
+│   ├── refinar_mascaras_sam.py  controle de qualidade e refino das máscaras com SAM
+│   ├── treinar.py         treino de detecção ou segmentação (Ultralytics)
+│   ├── pipeline.sh        sequência completa de treinos (idempotente, retoma checkpoints)
+│   ├── avaliar.py         limiar em validação, teste único, matriz, IoU/Dice, erros, fatias
+│   ├── video.py           inferência em vídeo + ByteTrack, contagem por ID e figuras
+│   └── gerar_notebook.py  gera notebooks/sistematizacao.ipynb
+├── notebooks/             notebook executável (local ou Colab), com saídas
 ├── reports/               relatório (Markdown, HTML e PDF) e figuras numeradas
 ├── tools/build_report.py  Markdown → HTML → PDF com apêndice de código gerado do repositório
 ├── figs/                  figuras geradas (EDA, curvas, painéis, erros)
@@ -70,8 +83,13 @@ python scripts/baixar_dataset.py --workspace pothole-vsmtu --project potholes-an
 python scripts/filtrar_classes.py dataset --manter 0     # mantém só pothole (descarta road)
 python scripts/eda.py dataset --saida figs
 
+python scripts/refinar_mascaras_sam.py qc dataset          # SAM × polígonos humanos (300 instâncias)
+python scripts/refinar_mascaras_sam.py refinar dataset     # caixas → máscaras SAM (originais em labels_original/)
+
 python scripts/treinar.py --tarefa det --modelo yolo11s.pt --epocas 50
 python scripts/treinar.py --tarefa seg --modelo yolo11s-seg.pt --epocas 50
+python scripts/avaliar.py --det runs/detect/det_s --seg runs/segment/seg_s --extras runs/detect/det_s800 runs/detect/det_m --regra f1
+python scripts/video.py --video video/cenario.mp4 --conf 0.25 --iou-nms 0.7
 ```
 
 No Colab: abra `notebooks/sistematizacao.ipynb`, ative GPU T4 e execute em ordem. Pesos treinados: [Release v1.0](https://github.com/diegoedataengineer/sistematizacao-visao-computacional/releases/tag/v1.0) — `gh release download v1.0 -p "*.pt"` (det_s_best.pt, seg_s_best.pt, baseline_n_best.pt).
