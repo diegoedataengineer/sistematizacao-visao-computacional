@@ -12,7 +12,7 @@
 | **Cenário** | Cidades Inteligentes — buracos em vias |
 | **Repositório** | [https://github.com/diegoedataengineer/sistematizacao-visao-computacional](https://github.com/diegoedataengineer/sistematizacao-visao-computacional) |
 | **Pesos treinados** | Release `v1.0` — `det_s_best.pt`, `seg_s_best.pt`, `baseline_n_best.pt` |
-| **Vídeos** | máscaras: `cenario_seg.mp4` · rastreamento: `cenario_track.mp4` — <!-- link do Drive --> |
+| **Vídeo com inferência** | [rastreamento com máscaras e IDs](https://drive.google.com/file/d/1MBH4MUW7n8PJhkpvSn6E6l2-FT04-bHW/view?usp=sharing) · [só máscaras](https://drive.google.com/file/d/1bt9ZMDrYmxOyFZ0Gp3_BlIqrtE5oky2r/view?usp=sharing) |
 | **Vídeo-pitch** | <!-- link (domingo) --> |
 
 ---
@@ -298,7 +298,7 @@ Re-anotar o conjunto de teste, ou ao menos os falsos positivos de alta confianç
 <!-- INICIO-APENDICE-CODIGO -->
 
 ## Apêndice — Código-fonte
-Listagem integral do código que produziu os resultados deste relatório. no commit `d63bfa6`. As seções seguem a ordem do pipeline — do dado bruto ao relatório — e não a ordem alfabética.
+Listagem integral do código que produziu os resultados deste relatório. no commit `29b46e4`. As seções seguem a ordem do pipeline — do dado bruto ao relatório — e não a ordem alfabética.
 
 Este apêndice é **gerado a partir dos arquivos do repositório**. não transcrito: código copiado para dentro de um documento diverge do original no primeiro ajuste.
 
