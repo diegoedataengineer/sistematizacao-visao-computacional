@@ -74,27 +74,95 @@ Detalhes da análise exploratória em `figs/eda.png` e na seção 3 do relatóri
 
 ## Reprodução
 
+Passo a passo no Linux, na ordem em que os scripts se encadeiam. Cada etapa grava suas saídas em `figs/` ou `runs/`, e as seguintes leem de lá. Seed 0 em todos os treinos; versões em `requirements.txt`.
+
+### 0. Ambiente
+
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-
-export ROBOFLOW_API_KEY=...            # chave própria (gratuita) em app.roboflow.com
-python scripts/baixar_dataset.py --workspace pothole-vsmtu --project potholes-and-roads-instance-segmentation --version 5
-python scripts/filtrar_classes.py dataset --manter 0     # mantém só pothole (descarta road)
-python scripts/eda.py dataset --saida figs
-
-python scripts/refinar_mascaras_sam.py qc dataset          # SAM × polígonos humanos (300 instâncias)
-python scripts/refinar_mascaras_sam.py refinar dataset     # caixas → máscaras SAM (originais em labels_original/)
-
-python scripts/treinar.py --tarefa det --modelo yolo11s.pt --epocas 50
-python scripts/treinar.py --tarefa seg --modelo yolo11s-seg.pt --epocas 50
-python scripts/avaliar.py --det runs/detect/det_s --seg runs/segment/seg_s --extras runs/detect/det_s800 runs/detect/det_m --regra f1
-python scripts/video.py --video video/cenario.mp4 --conf 0.25 --iou-nms 0.7
+git clone https://github.com/diegoedataengineer/sistematizacao-visao-computacional.git
+cd sistematizacao-visao-computacional
+python3 -m venv .venv && source .venv/bin/activate
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cu126   # GPU com CUDA 12.x
+pip install -r requirements.txt transformers accelerate                            # transformers: SAM
 ```
 
-No Colab: abra `notebooks/sistematizacao.ipynb`, ative GPU T4 e execute em ordem. Pesos treinados: [Release v1.0](https://github.com/diegoedataengineer/sistematizacao-visao-computacional/releases/tag/v1.0) — `gh release download v1.0 -p "*.pt"` (det_s_best.pt, seg_s_best.pt, baseline_n_best.pt).
+### 1. Dados e análise exploratória
 
-Versões: ver `requirements.txt`; seed 0 em todos os treinos.
+```bash
+export ROBOFLOW_API_KEY=...            # chave própria (gratuita) em app.roboflow.com
+python scripts/baixar_dataset.py --workspace pothole-vsmtu --project potholes-and-roads-instance-segmentation --version 5
+python scripts/filtrar_classes.py dataset --manter 0        # mantém só pothole; caixas viram polígonos de 4 pontos
+python scripts/eda.py dataset --saida figs                  # figs/eda.png, figs/amostras.png, figs/eda_tabela.md
+```
+
+### 2. Refino das máscaras com SAM
+
+```bash
+python scripts/refinar_mascaras_sam.py qc dataset --amostra 300               # SAM × 300 polígonos humanos
+python scripts/refinar_mascaras_sam.py refinar dataset --splits train valid test   # caixas → máscaras; originais em labels_original/
+```
+
+### 3. Treino
+
+Cerca de 6 h no total numa GTX 1060 (6 GB); bem menos numa A100 do Colab.
+
+```bash
+python scripts/treinar.py --tarefa det --modelo yolo11n.pt     --epocas 50 --nome baseline_n
+python scripts/treinar.py --tarefa det --modelo yolo11s.pt     --epocas 50 --nome det_s
+python scripts/treinar.py --tarefa seg --modelo yolo11s-seg.pt --epocas 50 --nome seg_s
+python scripts/treinar.py --tarefa det --modelo yolo11s.pt     --epocas 50 --nome det_s800 --imgsz 800   # extra
+python scripts/treinar.py --tarefa det --modelo yolo11m.pt     --epocas 50 --nome det_m                  # extra
+```
+
+Alternativa: tudo de uma vez, idempotente, retomando do último checkpoint se interrompido.
+
+```bash
+setsid nohup bash scripts/pipeline.sh > runs/logs/pipeline.out 2>&1 < /dev/null &
+tail -f runs/logs/pipeline.log
+```
+
+Atalho sem treinar: pesos da [Release v1.0](https://github.com/diegoedataengineer/sistematizacao-visao-computacional/releases/tag/v1.0) (só as três configurações principais; nesse caso retire `det_s800` e `det_m` do `--extras` no passo 4).
+
+```bash
+gh release download v1.0 -p "*.pt"
+mkdir -p runs/detect/det_s/weights runs/segment/seg_s/weights runs/detect/baseline_n/weights
+mv det_s_best.pt      runs/detect/det_s/weights/best.pt
+mv seg_s_best.pt      runs/segment/seg_s/weights/best.pt
+mv baseline_n_best.pt runs/detect/baseline_n/weights/best.pt
+```
+
+### 4. Avaliação
+
+Escolhe o limiar em validação (máximo F1), avalia o teste uma única vez e grava tabela, matriz de confusão, IoU/Dice, painéis de erros e caixas × máscaras em `figs/`.
+
+```bash
+python scripts/avaliar.py --det runs/detect/det_s --seg runs/segment/seg_s \
+    --extras runs/detect/baseline_n runs/detect/det_s800 runs/detect/det_m --regra f1 --iou-nms 0.7
+```
+
+Sem GPU: acrescente `--device cpu`.
+
+### 5. Vídeo
+
+O arquivo `video/cenario.mp4` não é versionado: é o [vídeo do YouTube](https://www.youtube.com/watch?v=I0HsZ2rsW8M) citado acima, ou qualquer vídeo próprio.
+
+```bash
+python scripts/video.py --video video/cenario.mp4 --conf 0.25 --iou-nms 0.7
+# saídas: video/seg/ (máscaras), video/cenario_track.mp4 (IDs), figs/video_contagem.png, figs/video_quadros.png, figs/video_resumo.json
+```
+
+### 6. Relatório e notebook
+
+```bash
+pip install -r requirements-report.txt
+python tools/build_report.py                     # reports/relatorio.html e .pdf (10 páginas); precisa do Google Chrome
+python tools/build_report.py --com-apendice      # versão com o apêndice de código
+
+python scripts/gerar_notebook.py
+jupyter nbconvert --to notebook --execute --inplace --ExecutePreprocessor.timeout=-1 notebooks/sistematizacao.ipynb
+```
+
+No Colab: abra `notebooks/sistematizacao.ipynb`, ative a GPU e execute em ordem; a primeira célula clona o repositório e instala as dependências. Com `TREINAR = False` (padrão) o notebook usa os pesos da Release e reproduz os números do relatório.
 
 ## Referências
 
