@@ -193,7 +193,7 @@ if "iou_dice_test_labels_original" in R: print("IoU/Dice no teste vs anotações
 md("""
 ## 5. Vídeo
 
-Inferência do segmentador (caixas + máscaras) no vídeo real do cenário, com o mesmo ponto de operação, e rastreamento ByteTrack para contar buracos únicos. O vídeo desta entrega é um trecho de 90,7 s de uma rodovia da Paraíba (YouTube, ID `I0HsZ2rsW8M`), salvo em `video/cenario.mp4` (no Colab a célula pede o upload). A célula chama `scripts/video.py`, que também gera as figuras da seção 9 do relatório.
+Inferência do segmentador (caixas + máscaras) no vídeo real do cenário, com o mesmo ponto de operação, e rastreamento ByteTrack para contar buracos únicos. O vídeo desta entrega é um trecho de 90,7 s de uma rodovia da Paraíba ([YouTube](https://www.youtube.com/watch?v=I0HsZ2rsW8M)), salvo em `video/cenario.mp4` (no Colab a célula pede o upload). A célula chama `scripts/video.py`, que também gera as figuras da seção 9 do relatório.
 """),
 code("""
 #@title 5.1 Inferência e rastreamento (ByteTrack)
