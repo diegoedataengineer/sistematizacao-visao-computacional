@@ -27,7 +27,7 @@ Priorizar a manutenção viária a partir de imagens capturadas por veículos em
 
 ## Vídeo
 
-Trecho de 90,7 s de uma rodovia da Paraíba (YouTube, ID `I0HsZ2rsW8M`, 1280×720 a 30 FPS), usado como teste de generalização de domínio. `scripts/video.py` roda o segmentador no ponto de operação do teste e o ByteTrack para contar buracos únicos:
+Vídeo de 90,7 s de uma rodovia da Paraíba ([YouTube](https://www.youtube.com/watch?v=I0HsZ2rsW8M), 1280×720 a 30 FPS), usado como teste de generalização de domínio. `scripts/video.py` roda o segmentador no ponto de operação do teste e o ByteTrack para contar buracos únicos:
 
 | Detecções somadas por quadro | Buracos únicos (IDs) | Trilhas ≥ 5 quadros | Trocas de ID candidatas | Latência (GTX 1060) |
 |---|---|---|---|---|

@@ -245,7 +245,7 @@ Duas observações operacionais. Primeiro, como o vídeo passa pelo mesmo buraco
 
 ## 9. Aplicação em vídeo
 
-O vídeo de demonstração é um trecho de **90,7 s** (1280×720, 29,97 quadros/s, 2 719 quadros) de um registro público feito de dentro de um veículo numa rodovia da Paraíba (YouTube, *Estrada esburacada na Paraíba*, ID `I0HsZ2rsW8M`) — deliberadamente um teste de **generalização de domínio**: asfalto degradado com trechos de terra, luz forte e câmera trepidante, contra um dataset de treino estrangeiro. A inferência usa o segmentador no ponto de operação do teste (`conf = 0,25`, `IoU NMS = 0,7`, 640 px) e o rastreador **ByteTrack** do Ultralytics, que associa detecções de baixa confiança num segundo estágio. Buracos são estáticos; o movimento é da câmera, e o filtro de Kalman precisa acompanhar um alvo que cresce e desce na imagem conforme o carro se aproxima. Tudo está em `scripts/video.py` (célula 5.1 do notebook); os vídeos com máscaras e com IDs estão nos links da capa.
+O vídeo de demonstração é um trecho de **90,7 s** (1280×720, 29,97 quadros/s, 2 719 quadros) de um registro público feito de dentro de um veículo numa rodovia da Paraíba ([YouTube, *Estrada esburacada na Paraíba*](https://www.youtube.com/watch?v=I0HsZ2rsW8M)) — deliberadamente um teste de **generalização de domínio**: asfalto degradado com trechos de terra, luz forte e câmera trepidante, contra um dataset de treino estrangeiro. A inferência usa o segmentador no ponto de operação do teste (`conf = 0,25`, `IoU NMS = 0,7`, 640 px) e o rastreador **ByteTrack** do Ultralytics, que associa detecções de baixa confiança num segundo estágio. Buracos são estáticos; o movimento é da câmera, e o filtro de Kalman precisa acompanhar um alvo que cresce e desce na imagem conforme o carro se aproxima. Tudo está em `scripts/video.py` (célula 5.1 do notebook); os vídeos com máscaras e com IDs estão nos links da capa.
 
 | Medida | Valor |
 |---|---|
@@ -293,12 +293,12 @@ Re-anotar o conjunto de teste, ou ao menos os falsos positivos de alta confianç
 
 **Declaração de uso de IA.** Ferramentas de IA generativa foram utilizadas exclusivamente como suporte na organização do cronograma, na estruturação inicial dos scripts e na revisão linguística do texto. Toda a execução, verificação e adaptação do código foram realizadas pelo autor. Os resultados obtidos, as figuras geradas e as análises textuais são de inteira responsabilidade e autoria do autor.
 
-**Referências.** Dataset: *Potholes and Roads Instance Segmentation*, pothole-vsmtu, Roboflow Universe, v5, CC BY 4.0 · Jocher, G. et al. *Ultralytics YOLO11*, 2024 · Redmon, J. et al. *You Only Look Once*, CVPR 2016 · Kirillov, A. et al. *Segment Anything*, ICCV 2023 · Zhang, Y. et al. *ByteTrack*, ECCV 2022 · Vídeo: *Estrada esburacada na Paraíba*, YouTube, ID I0HsZ2rsW8M · Heriberto, R. *Apostilas da disciplina*, CEUB, 2026.
+**Referências.** Dataset: *Potholes and Roads Instance Segmentation*, pothole-vsmtu, Roboflow Universe, v5, CC BY 4.0 · Jocher, G. et al. *Ultralytics YOLO11*, 2024 · Redmon, J. et al. *You Only Look Once*, CVPR 2016 · Kirillov, A. et al. *Segment Anything*, ICCV 2023 · Zhang, Y. et al. *ByteTrack*, ECCV 2022 · Vídeo: *Estrada esburacada na Paraíba*, [YouTube](https://www.youtube.com/watch?v=I0HsZ2rsW8M) · Heriberto, R. *Apostilas da disciplina*, CEUB, 2026.
 
 <!-- INICIO-APENDICE-CODIGO -->
 
 ## Apêndice — Código-fonte
-Listagem integral do código que produziu os resultados deste relatório. no commit `29b46e4`. As seções seguem a ordem do pipeline — do dado bruto ao relatório — e não a ordem alfabética.
+Listagem integral do código que produziu os resultados deste relatório. no commit `f4999e8`. As seções seguem a ordem do pipeline — do dado bruto ao relatório — e não a ordem alfabética.
 
 Este apêndice é **gerado a partir dos arquivos do repositório**. não transcrito: código copiado para dentro de um documento diverge do original no primeiro ajuste.
 
