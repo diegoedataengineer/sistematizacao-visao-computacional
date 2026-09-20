@@ -13,7 +13,7 @@
 | **Repositório** | [https://github.com/diegoedataengineer/sistematizacao-visao-computacional](https://github.com/diegoedataengineer/sistematizacao-visao-computacional) |
 | **Pesos treinados** | Release `v1.0` — `det_s_best.pt`, `seg_s_best.pt`, `baseline_n_best.pt` |
 | **Vídeo com inferência** | [rastreamento com máscaras e IDs](https://drive.google.com/file/d/1MBH4MUW7n8PJhkpvSn6E6l2-FT04-bHW/view?usp=sharing) · [só máscaras](https://drive.google.com/file/d/1bt9ZMDrYmxOyFZ0Gp3_BlIqrtE5oky2r/view?usp=sharing) |
-| **Vídeo-pitch** | <!-- link (domingo) --> |
+| **Vídeo-pitch** | [https://www.youtube.com/watch?v=zWGPLGHbiTE](https://www.youtube.com/watch?v=zWGPLGHbiTE) |
 
 ---
 
@@ -298,7 +298,7 @@ Re-anotar o conjunto de teste, ou ao menos os falsos positivos de alta confianç
 <!-- INICIO-APENDICE-CODIGO -->
 
 ## Apêndice — Código-fonte
-Listagem integral do código que produziu os resultados deste relatório. no commit `f4999e8`. As seções seguem a ordem do pipeline — do dado bruto ao relatório — e não a ordem alfabética.
+Listagem integral do código que produziu os resultados deste relatório. no commit `75563e0`. As seções seguem a ordem do pipeline — do dado bruto ao relatório — e não a ordem alfabética.
 
 Este apêndice é **gerado a partir dos arquivos do repositório**. não transcrito: código copiado para dentro de um documento diverge do original no primeiro ajuste.
 
@@ -1800,7 +1800,7 @@ if "iou_dice_test_labels_original" in R: print("IoU/Dice no teste vs anotações
 md("""
 ## 5. Vídeo
 
-Inferência do segmentador (caixas + máscaras) no vídeo real do cenário, com o mesmo ponto de operação, e rastreamento ByteTrack para contar buracos únicos. O vídeo desta entrega é um trecho de 90,7 s de uma rodovia da Paraíba (YouTube, ID `I0HsZ2rsW8M`), salvo em `video/cenario.mp4` (no Colab a célula pede o upload). A célula chama `scripts/video.py`, que também gera as figuras da seção 9 do relatório.
+Inferência do segmentador (caixas + máscaras) no vídeo real do cenário, com o mesmo ponto de operação, e rastreamento ByteTrack para contar buracos únicos. O vídeo desta entrega é um trecho de 90,7 s de uma rodovia da Paraíba ([YouTube](https://www.youtube.com/watch?v=I0HsZ2rsW8M)), salvo em `video/cenario.mp4` (no Colab a célula pede o upload). A célula chama `scripts/video.py`, que também gera as figuras da seção 9 do relatório.
 """),
 code("""
 #@title 5.1 Inferência e rastreamento (ByteTrack)

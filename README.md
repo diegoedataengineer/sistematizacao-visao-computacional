@@ -33,7 +33,7 @@ Vídeo de 90,7 s de uma rodovia da Paraíba ([YouTube](https://www.youtube.com/w
 |---|---|---|---|---|
 | 3 617 | 227 | 107 | 22 | 18–21 ms/quadro (≈ 50 FPS) |
 
-Vídeo com rastreamento (`cenario_track.mp4`): https://drive.google.com/file/d/1MBH4MUW7n8PJhkpvSn6E6l2-FT04-bHW/view?usp=sharing · Vídeo com máscaras (`cenario_seg.mp4`): https://drive.google.com/file/d/1bt9ZMDrYmxOyFZ0Gp3_BlIqrtE5oky2r/view?usp=sharing · Vídeo-pitch: <!-- link -->
+Vídeo com rastreamento (`cenario_track.mp4`): https://drive.google.com/file/d/1MBH4MUW7n8PJhkpvSn6E6l2-FT04-bHW/view?usp=sharing · Vídeo com máscaras (`cenario_seg.mp4`): https://drive.google.com/file/d/1bt9ZMDrYmxOyFZ0Gp3_BlIqrtE5oky2r/view?usp=sharing · Vídeo-pitch: https://www.youtube.com/watch?v=zWGPLGHbiTE
 
 ## Dataset
 
